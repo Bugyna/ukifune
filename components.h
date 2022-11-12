@@ -15,6 +15,13 @@ enum
 typedef struct COLLIDER COLLIDER;
 typedef struct RIGIDBODY RIGIDBODY;
 typedef struct TEXTURE TEXTURE;
+typedef struct STRING STRING;
+
+struct STRING
+{
+	char* str;
+	int index, size;
+};
 
 struct COLLIDER
 {

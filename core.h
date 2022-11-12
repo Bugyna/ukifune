@@ -16,8 +16,8 @@ bool collide_rect(SDL_Rect a, SDL_Rect b)
 
 bool collide_point(int x, int y, SDL_Rect b)
 {
-	if (x >= b.x || x <= b.x+b.w)
-		if (y >= b.y || y <= b.y+b.h)
+	if (x >= b.x && x <= b.x+b.w)
+		if (y >= b.y && y <= b.y+b.h)
 			return 1;
 
 	return 0;

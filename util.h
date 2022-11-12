@@ -59,3 +59,10 @@ ARGB convert_hex_to_argb(int hex)
 	return argb;
 }
 
+
+uint32_t hash(const char* key)
+{
+	// return FNV1A_Pippip_Yurii(key, strlen(key));
+	return strlen(key);
+}
+
