@@ -1,4 +1,7 @@
 #pragma once
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "components.h"
 #include "widgets.h"

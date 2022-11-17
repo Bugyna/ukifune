@@ -1,5 +1,9 @@
 #pragma once
 #include "util.h"
+#include "core.h"
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 
 enum
@@ -69,8 +73,8 @@ typedef struct WIDGET WIDGET;
 
 struct BIND
 {
-	u8(*system)(WORLD*, EVENT);
-	u8(*custom)(WORLD*, EVENT);
+	u8(*system)(WIDGET*, EVENT);
+	u8(*custom)(WIDGET*, EVENT);
 };
 
 void alloc_world_hashmap(BINDS_HASHMAP* h);
@@ -120,6 +124,7 @@ struct WIDGET
 	STYLE style;
 
 	int child_index;
+	void(*render_fn)(WIDGET*);
 
 
 	int type;
@@ -131,10 +136,14 @@ struct WIDGET
 		TEXT_INPUT text_input;
 	};
 	BINDS_HASHMAP binds;
+
 };
 
 struct WORLD
 {
+	SDL_Window* win;
+	SDL_Renderer* renderer;
+
 	WIDGET* children;
 	WIDGET* focus;
 	WIDGET* attention;
@@ -149,6 +158,18 @@ struct WORLD
 };
 
 // bool world_check_collision(WORLD* w, 
+
+void widget_bind_system(WIDGET* w, char* key, u8(*fn)(WIDGET*, EVENT))
+{
+	w->binds.binds[hash(key) % w->binds.size].system = fn;
+	SDL_Log("hash: %d", hash(key) % w->binds.size);
+}
+
+void widget_bind(WIDGET* w, char* key, u8(*fn)(WIDGET*, EVENT))
+{
+	w->binds.binds[hash(key) % w->binds.size].custom = fn;
+	SDL_Log("hash: %d", hash(key) % w->binds.size);
+}
 
 char* widget_type_name(WIDGET w)
 {
@@ -193,10 +214,11 @@ void widget_init(WORLD* w, WIDGET* widget, int type)
 
 	widget->child_index = 0;
 	widget->children = calloc(5, sizeof(WIDGET));
+	widget->render_fn = NULL;
 }
 
 
-WIDGET create_label(SDL_Renderer* renderer, WORLD* w, int x, int y, char* text)
+WIDGET create_label(WORLD* w, int x, int y, char* text)
 {
 	WIDGET widget;
 	widget_init(w, &widget, W_LABEL);
@@ -204,45 +226,74 @@ WIDGET create_label(SDL_Renderer* renderer, WORLD* w, int x, int y, char* text)
 	l.text.size = 64;
 	l.text.index = 0;
 	l.text.str = malloc(l.text.size);
+	strcpy(l.text.str, text);
 
-	l.tex = create_texture_from_text(renderer, x, y, text, widget.style.fg);
+	l.tex = create_texture_from_text(w->renderer, x, y, text, widget.style.fg);
 
 	widget.label = l;
 	return widget;
 }
 
 
-WIDGET create_text_input(SDL_Renderer* renderer, WORLD* w, int x, int y, char* text)
+
+u8 text_input_handle_keydown(WIDGET* w, EVENT e)
+{
+	// TEXTURE* tex = &w->text_input.tex;
+	// TODO NON LATIN INPUT
+	// if (e.type == SDL_TEXTEDITING)
+		// SDL_Log("system keydown: %s", e.edit.text);
+	// else if (e.type == SDL_TEXTINPUT)
+		// SDL_Log("system keydown: %s", e.text.text);
+
+	// else {
+		// SDL_Log("quitting");
+		// exit(1);
+	// }
+
+
+	w->text_input.text.index += strlen(e.text.text);
+	if (w->text_input.text.index >= w->text_input.text.size) {
+		w->text_input.text.size += 64+strlen(e.text.text);
+		w->text_input.text.str = realloc(w->text_input.text.str, w->text_input.text.size);
+	}
+	// SDL_Log("str debug: %d %d %ld", w->text_input.text.size, w->text_input.text.index, strlen(e.text.text));
+	strcat(w->text_input.text.str, e.text.text);
+	// w->text_input.text.str = e.text.text;
+	// SDL_Log("idek: %s", w->text_input.text.str);
+
+	w->text_input.tex = create_texture_from_text(w->world_parent->renderer, w->text_input.tex.rect.x, w->text_input.tex.rect.y, w->text_input.text.str, w->style.fg);
+	w->text_input.cursor.rect.x = w->text_input.tex.rect.x + w->text_input.tex.rect.w;
+	return 0;
+}
+
+
+void render_text_input(WIDGET* w)
+{
+	SDL_RenderCopy(w->world_parent->renderer, w->text_input.tex.tex, NULL, &w->text_input.tex.rect);
+	SDL_RenderCopy(w->world_parent->renderer, w->text_input.cursor.tex, NULL, &w->text_input.cursor.rect);
+}
+
+
+WIDGET create_text_input(WORLD* w, int x, int y, char* text)
 {
 	WIDGET widget;
 	widget_init(w, &widget, W_TEXT_INPUT);
 	TEXT_INPUT t;
 
 	t.text.size = 64;
-	t.text.index = 0;
+	t.text.index = strlen(text);
 	t.text.str = malloc(t.text.size);
-	t.tex = create_texture_from_text(renderer, x, y, text, widget.style.fg);
-	// t.cursor = create_texture_from_text(renderer, x, y, "\u2588", widget.style.fg);
+	strcpy(t.text.str, text);
+	t.tex = create_texture_from_text(w->renderer, x, y, text, widget.style.fg);
+	t.cursor = create_texture_from_text(w->renderer, x+t.tex.rect.w, y, "\u2588", widget.style.fg);
+	// int tmp_w = 0, tmp_h = 0;
+	// SDL_Log("motheffucker: %d", TTF_SizeUTF8(w->style.font, "\u2588\u2588\u2588\u2588", &tmp_w, &tmp_h));
+	// t.cursor = create_texture_from_image(w->renderer, x+t.tex.rect.w, y, tmp_w, tmp_h, "maybe.png");
+	widget_bind_system(&widget, "<keypress>", text_input_handle_keydown);
 
 	widget.text_input = t;
+	widget.render_fn = render_text_input;
 	return widget;
-}
-
-u8 text_input_handle_keydown(WORLD* w, EVENT e)
-{
-	TEXTURE* tex = &w->focus->text_input.tex;
-	
-}
-
-// void widget_handle_keydown(WIDGET* w, EVENT e)
-// {
-	
-// }
-
-void widget_bind(WIDGET* w, char* key, u8(*fn)(WORLD*, EVENT))
-{
-	w->binds.binds[hash(key) % w->binds.size].custom = fn;
-	SDL_Log("hash: %d", hash(key) % w->binds.size);
 }
 
 
