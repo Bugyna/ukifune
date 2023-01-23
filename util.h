@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL2/SDL_video.h>
+#include "hashmap.h"
 
 #define i8 int8_t
 #define i16 int16_t

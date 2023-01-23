@@ -75,10 +75,14 @@ typedef struct BUTTON BUTTON;
 typedef struct TEXT_INPUT TEXT_INPUT;
 typedef struct WIDGET WIDGET;
 
+
+
 struct BIND
 {
+	char* key;
 	u8(*system)(WIDGET*, EVENT);
 	u8(*custom)(WIDGET*, EVENT);
+	EVENT last_event;
 };
 
 void alloc_win_hashmap(BINDS_HASHMAP* h);
@@ -125,12 +129,20 @@ struct WIDGET
 	WIN* win_parent;
 	WIDGET* parent;
 	WIDGET* children;
+	
+	EVENT last_click;
+	EVENT last_click_release;
+	EVENT last_keyboard;
+	
 	STYLE style;
 
 	int child_index;
 	void(*render_fn)(WIDGET*);
 
 
+	int last_click_rx;
+	int last_click_ry;
+	
 	int type;
 	char* name;
 	union
@@ -162,6 +174,9 @@ struct WIN
 	int child_index, render_index;
 
 	int mouse_x, mouse_y;
+	EVENT last_click;
+	EVENT last_click_release;
+	EVENT last_keyboard;
 	int mouse_scroll;
 };
 
