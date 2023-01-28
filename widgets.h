@@ -77,12 +77,17 @@ typedef struct WIDGET WIDGET;
 
 
 
+#define BIND_FN_PARAMS (WIDGET* w, EVENT e, char* bind)
+#define WIN_BIND_FN_PARAMS (WIN* w, EVENT e, char* bind)
+
+
 struct BIND
 {
-	char* key;
-	u8(*system)(WIDGET*, EVENT);
-	u8(*custom)(WIDGET*, EVENT);
+	char* bind;
+	u8(*system)BIND_FN_PARAMS;
+	u8(*custom)BIND_FN_PARAMS;
 	EVENT last_event;
+	int rx, ry;
 };
 
 void alloc_win_hashmap(BINDS_HASHMAP* h);
@@ -93,6 +98,15 @@ struct BINDS_HASHMAP
 	// void(**fn)(WIN*, EVENT);
 	BIND* binds;
 };
+
+void print_binds(BINDS_HASHMAP h)
+{
+	for (int i = 0; i < h.index; i++)
+	{
+		if (h.binds[i].bind != NULL)
+			SDL_Log("bind: %s", h.binds[i].bind);
+	}
+}
 
 struct STYLE
 {

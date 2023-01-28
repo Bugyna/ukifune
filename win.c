@@ -51,7 +51,7 @@ void win_init(WIN* w)
 	w->render_list = calloc(5, sizeof(WIDGET*));
 	// w->children = calloc(6, sizeof(WIDGET)); // this throws floating point exception somehow lmao
    
-	global_font = TTF_OpenFont("firacode.ttf", 18);
+	global_font = TTF_OpenFont("Ac437_9x8.ttf", 18);
 	w->style.font = global_font;
 	
 	WIDGET widget = create_label(w, 1280, 720, "WIN");
@@ -83,42 +83,42 @@ void alloc_win_children(WIN* w)
 	}
 }
 
-u8 (*get_bind_ptr(BINDS_HASHMAP h, char* key))(WIDGET*, EVENT)
+u8 (*get_bind_ptr(BINDS_HASHMAP h, char* bind))(WIDGET*, EVENT, char*)
 {
-	// SDL_Log("hash: %d", hash(key) % h.size);
-	// SDL_Log("custom bind ptr: %p", h.binds[hash(key) % h.size].custom);
-	return h.binds[hash(key) % h.size].custom;
+	// SDL_Log("hash: %d", hash(bind) % h.size);
+	// SDL_Log("custom bind ptr: %p", h.binds[hash(bind) % h.size].custom);
+	return h.binds[hash(bind) % h.size].custom;
 }
 
-u8 (*get_system_bind_ptr(BINDS_HASHMAP h, char* key))(WIDGET*, EVENT)
+u8 (*get_system_bind_ptr(BINDS_HASHMAP h, char* bind))(WIDGET*, EVENT, char*)
 {
-	// SDL_Log("hash: %d", hash(key) % h.size);
-	return h.binds[hash(key) % h.size].system;
-}
-
-
-BIND* get_bind(BINDS_HASHMAP h, char* key)
-{
-	return &h.binds[hash(key) % h.size];
+	// SDL_Log("hash: %d", hash(bind) % h.size);
+	return h.binds[hash(bind) % h.size].system;
 }
 
 
-EVENT get_last_event(BINDS_HASHMAP h, char* key)
+BIND* get_bind(BINDS_HASHMAP h, char* bind)
 {
-	return &h.binds[hash(key) % h.size].last_event;
+	return &h.binds[hash(bind) % h.size];
 }
 
 
-void win_bind(WIN* w, char* key, u8(*fn)(WIDGET*, EVENT))
+EVENT get_last_event(BINDS_HASHMAP h, char* bind)
+{
+	return h.binds[hash(bind) % h.size].last_event;
+}
+
+
+void win_bind(WIN* w, char* bind, u8(*fn)BIND_FN_PARAMS)
 {
 	// int type = 0;
-	// if (!strcmp(key, "<mousemove>")) {
+	// if (!strcmp(bind, "<mousemove>")) {
 		// type = SDL_MOUSEMOTION;
 	// }
 
-	w->binds.binds[hash(key) % w->binds.size].key = key;
-	w->binds.binds[hash(key) % w->binds.size].custom = fn;
-	SDL_Log("hash: %d", hash(key) % w->binds.size);
+	w->binds.binds[hash(bind) % w->binds.size].bind = bind;
+	w->binds.binds[hash(bind) % w->binds.size].custom = fn;
+	SDL_Log("hash: %d", hash(bind) % w->binds.size);
 }
 
 
@@ -190,17 +190,24 @@ WIDGET* focus_get(WIN* w)
 	return w->focus;
 }
 
-void execute_widget_bind(WIDGET* w, char* bind_key, EVENT e)
+void execute_widget_bind(WIDGET* w, EVENT e, char* bind)
 {
 	u8 res = 0;
-	u8(*fn)(WIDGET*, EVENT);
-	BIND* b = get_bind(w->binds, bind_key);
+	u8(*fn)BIND_FN_PARAMS;
+	BIND* b = get_bind(w->binds, bind);
 	// fn = get_bind_ptr(w->binds, bind_key);
 	b->last_event = e;
+	SDL_Rect rect = get_widget_rect(w);
+	// SDL_Log("execute widget bind: %s %d %d %d %d", bind, w->win_parent->mouse_x, w->win_parent->mouse_y, b->rx, b->ry);
+	b->rx = abs(rect.x - w->win_parent->mouse_x);
+	b->ry = abs(rect.y - w->win_parent->mouse_y);
+	// SDL_Log("execute widget bind: %s %d %d %d %d", bind, w->win_parent->mouse_x, w->win_parent->mouse_y, b->rx, b->ry);
+	// SDL_Log("rel: %d %d", b->rx, b->ry);
+	
 
 	fn = b->custom;
 	if (fn != NULL)
-        res = fn(w, e);
+        res = fn(w, e, bind);
     
 	// SDL_Log("custom widget bind res: %d", res);
 	if (res)
@@ -209,8 +216,52 @@ void execute_widget_bind(WIDGET* w, char* bind_key, EVENT e)
 	// fn = get_system_bind_ptr(w->binds, bind_key);
 	fn = b->system;
 	if (fn != NULL)
-        fn(w, e);
+        fn(w, e, bind);
 }
+
+
+BIND** get_binds_from_key(BINDS_HASHMAP h, char* bind)
+{
+	BIND** ret = calloc(5, sizeof(BIND*));
+	
+	int len = strlen(bind), size = 0, offset = 0, i = 0;
+	// for ( ; offset < len; offset++)
+	char* tmp = strtok(bind, "<");
+	offset = strlen(tmp)-1;
+	ret[i++] = get_bind(h, tmp);
+		
+		
+	for ( ; offset < len; )
+	{
+		size = strcspn(bind+offset, "<");
+		// SDL_Log("size: %d %d %s", size, offset, bind+offset);
+		offset += size+1;
+		// ret[i] = malloc(size+1);
+		ret[i++] = get_bind(h, bind+offset);
+		// strncpy(ret[i++], bind+offset, size);
+	}
+
+	return ret;
+}
+
+
+// BIND* parse_bind_key(char* bind)
+// {
+	// BIND* ret = calloc(5*sizeof(BIND));
+	// int len = strlen(bind), size = 0, offset = 0;
+	// for (int i = 0; offset < len;)
+	// {
+		// size = strcspn(bind+offset, ">");
+		// SDL_Log("size: %d %d %s", size, offset, bind+offset);
+		// offset += size+1;
+		// // ret[i] = malloc(size+1);
+		// ret[i++] = get_bind(bind+offset);
+		// // strncpy(ret[i++], bind+offset, size);
+	// }
+
+	// return ret;
+// }
+
 
 void win_handle_mouse_move(WIN* w, EVENT e)
 {
@@ -228,52 +279,103 @@ void win_handle_mouse_move(WIN* w, EVENT e)
 	// if (fn != NULL)
     // if (fn(w, e))
     // return;
-	
 
-	switch (e.button.button)
-	{
-		case SDL_BUTTON_LEFT:
-			execute_widget_bind(w->focus, "<mouse_left_drag>", e);
-			break;
-		case SDL_BUTTON_RIGHT:
-			execute_widget_bind(w->focus, "<mouse_right_drag>", e);
-			break;
-		case SDL_BUTTON_MIDDLE:
-			execute_widget_bind(w->focus, "<mouse_middle_drag>", e);
-			break;
-		default: execute_widget_bind(w->focus, "<mouse_move>", e);
-	}
+	// SDL_Log("win_handle_mouse move e.button.button: %d %d", e.motion.state, SDL_BUTTON_RMASK);
+	// widget_localize_mouse_location(w->focus, &e);
+	char* tmp = malloc(128);
+
+	
+	int o = 0, n = 0;
+	uint8_t* keys = SDL_GetKeyboardState(&n);
+	for (int i = 0; i < n; i++)
+		// if (keys[i] == 1) SDL_Log("key: %s %i", SDL_GetScancodeName(i), n);
+		// if (keys[i] == 1) SDL_Log("key: %c %i", SDL_GetKeyFromScancode(i), n);
+		if (keys[i] == 1) tmp[o++] = SDL_GetKeyFromScancode(i);
+
+	// tmp[o++] = '\0';
+	// SDL_Log("dwaww: %s", tmp);
+	
+	// if (w->attention == w->focus)
+	// {
+		switch (e.motion.state)
+		{
+			case SDL_BUTTON_LMASK:
+				strcpy(tmp+o, "<mouse_left>");
+				// execute_widget_bind(w->focus, e, "<mouse_left><mouse_move>");
+				o += 12;
+				break;
+			case SDL_BUTTON_RMASK:
+				strcpy(tmp+o, "<mouse_right>");
+				o += 13;
+				// execute_widget_bind(w->focus, e, "<mouse_right><mouse_move>");
+				break;
+			case SDL_BUTTON_MMASK:
+				// strcpy(tmp+o, "<mouse_middle><mouse_move>");
+				strcpy(tmp+o, "<mouse_middle>");
+				o += 14;
+				// o += 28;
+				// execute_widget_bind(w->focus, e, "<mouse_middle><mouse_move>");
+				break;
+			// default: execute_widget_bind(w->focus, e, "<mouse_move>");
+		}
+	// }
+
+	// else execute_widget_bind(w->focus, e, "<mouse_move>");
+	// SDL_Log("Dwawd: %d", o);
+	strcpy(tmp+o, "<mouse_move>");
+	tmp[o+13] = '\0';
+	SDL_Log("dwa: %s %d", tmp, e.motion.state);
+	execute_widget_bind(w->focus, e, tmp);
+	
 }
 
 
 void win_handle_mouse_button_down(WIN* w, EVENT e)
 {
-	if (e.button.button == SDL_BUTTON_LEFT) {
-		u8(*fn)(WIDGET*, EVENT) = get_bind_ptr(w->binds, "<mouse_left>");
-		w->last_click = e;
+	// u8(*fn)BIND_FN_PARAMS;
+
+	// widget_localize_mouse_location(w->focus, &e);
+	// SDL_Log("win mouse button down e.button.button: %d %d %d", e.button.button, SDL_BUTTON_RIGHT, e.motion.x);
+	switch (e.button.button)
+	{
+		case SDL_BUTTON_LEFT:
+			execute_widget_bind(w->focus, e, "<mouse_left>");
+			break;
+		case SDL_BUTTON_RIGHT:
+			execute_widget_bind(w->focus, e, "<mouse_right>");
+			break;
+		case SDL_BUTTON_MIDDLE:
+			execute_widget_bind(w->focus, e, "<mouse_middle>");
+			break;
+			
+	}
+	// if (e.button.button == SDL_BUTTON_LEFT) {
+		// u8(*fn)(WIDGET*, EVENT, char*) = get_bind_ptr(w->binds, "<mouse_left>");
+		// w->last_click = e;
         
-		SDL_Log("focus bef: %s", w->focus->name);
+		// SDL_Log("focus bef: %s", w->focus->name);
 		// set_focus_auto(w);
 		// w->focus->last_click = e;
-		TEXTURE* t = get_widget_texture_ptr(w->focus);
-		w->focus->last_click_rx = abs(t->rect.x - e.motion.x);
-		w->focus->last_click_ry = abs(t->rect.y - e.motion.y);
-		SDL_Log("focus aft: %s", w->focus->name);	
-		execute_widget_bind(w->focus, "<mouse_left>", e);
-	}
+		// TEXTURE* t = get_widget_texture_ptr(w->focus);
+		// w->focus->last_click_rx = abs(t->rect.x - e.motion.x);
+		// w->focus->last_click_ry = abs(t->rect.y - e.motion.y);
+		// SDL_Log("focus aft: %s", w->focus->name);
+		// execute_widget_bind(w->focus, e, "<mouse_left>");
+	// }
+	// execute_widget_bind(w->focus, e, "<mouse_left>");
 }
 
 void win_handle_mouse_button_up(WIN* w, EVENT e)
 {
 	if (e.button.button == SDL_BUTTON_LEFT) {
-		u8(*fn)(WIDGET*, EVENT) = get_bind_ptr(w->binds, "<mouse_left_release>");
+		u8(*fn)(WIDGET*, EVENT, char*) = get_bind_ptr(w->binds, "<mouse_left_release>");
 		w->last_click_release = e;
         
 		SDL_Log("focus bef: %s", w->focus->name);
 		set_focus_auto(w);
 		SDL_Log("focus aft: %s", w->focus->name);
 		// w->focus->last_click_release = e;
-		execute_widget_bind(w->focus, "<mouse_left_release>", e);
+		execute_widget_bind(w->focus, e, "<mouse_left_release>");
 	}
 }
 
@@ -296,22 +398,88 @@ u8 win_handle_keydown(WIN* w, EVENT e)
 {
 	// char s[2];
 	// sprintf(s, "%c", e.key.keysym.sym);
-	if (e.type == SDL_TEXTEDITING)
-		SDL_Log("win keydown: %s", e.edit.text);
-	else
-		SDL_Log("win keydown: %s", e.text.text);
+	// char* a = malloc(3);
+
+	switch (e.type)
+	{
+		case SDL_KEYDOWN:
+			// SDL_Log("d: %c", e.key.keysym.sym);
+			// a[0] = e.key.keysym.sym;
+			// a[1] = '\0';
+			break;
+			
+		// case SDL_TEXTEDITING:
+			// a = e.edit.text;
+			// break;
+
+		// default:
+			// a = e.text.text;
+	}
+	// SDL_Log("win keydown: %s %d", a, e.key.repeat);
+	// if (e.type == SDL_TEXTEDITING) 
+		// SDL_Log("win keydown: %s", e.edit.text);
+	// else
+		// SDL_Log("win keydown: %s", e.text.text);
 	// u8(*fn)(WIN*, EVENT) = get_bind_ptr(w->binds, s);
 	// if (fn == NULL)
     // return 0;
+
+	char* tmp = malloc(20);
+	tmp[0] = SDL_GetKeyFromScancode(e.key.keysym.sym);
+	tmp[1] = '\0';
+	
+	// tmp[0] = '<';
+	// tmp[1] = e.key.keysym.sym;
+	// tmp[2] = '>';
+	// tmp[3] = '\0';
+	// SDL_Log("dd: %s", tmp);
+	
+	if (!e.key.repeat) {
+		// execute_widget_bind(w->focus, e, "<keypress>");
+		execute_widget_bind(w->focus, e, tmp);
+		// SDL_Log("handle keypress: %s", tmp);
+	}
+	// else execute_widget_bind(w->focus, e, "<keydown>");
     
-	execute_widget_bind(w->focus, "<keypress>", e);
+	return 1;
+}
+
+u8 win_handle_keypress(WIN* w, EVENT e)
+{
+	// char s[2];
+	// sprintf(s, "%c", e.key.keysym.sym);
+	char* a = malloc(2);
+
+	switch (e.type)
+	{
+		case SDL_KEYDOWN:
+			a[0] = e.key.keysym.sym;
+			a[1] = '\0';
+			break;
+			
+		case SDL_TEXTEDITING:
+			a = e.edit.text;
+			break;
+
+		default:
+			a = e.text.text;
+	}
+
+	char tmp[4] = {'<', a[0], '>', '\0'};
+	
+	if (!e.key.repeat) {
+		execute_widget_bind(w->focus, e, "<keypress>");
+		execute_widget_bind(w->focus, e, "<keypress>");
+		SDL_Log("handle keypress: %s", tmp);
+	}
+	else execute_widget_bind(w->focus, e, "<keydown>");
     
 	return 1;
 }
 
 
 u8 test_fn(WIN* w, EVENT e) {
-	printf("aaaaaaaa %d\n", e.type);
+	// printf("aaaaaaaa %d\n", e.type);
 	return 0;
 }
 
@@ -370,7 +538,6 @@ void win_render_default(WIN* w)
 	SDL_RenderPresent(w->renderer);
 }
 
-
 void uki_destroy_win(WIN* win)
 {
 	SDL_DestroyRenderer(win->renderer);
@@ -380,6 +547,12 @@ void uki_destroy_win(WIN* win)
 	IMG_Quit();
 	TTF_Quit();
 	SDL_Quit();
+}
+
+u8 win_close(WIDGET* w, EVENT e)
+{
+	uki_destroy_win(w->win_parent);
+	return 0;
 }
 
 

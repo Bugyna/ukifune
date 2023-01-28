@@ -2,16 +2,37 @@
 #include "widgets.h"
 // bool win_check_collision(WIN* w, 
 
-void widget_bind_system(WIDGET* w, char* key, u8(*fn)(WIDGET*, EVENT))
+
+
+DEF_GET_WIDGET_ATTR_PTR_FN(TEXTURE*, get_widget_textures, .tex)
+TEXTURE* get_widget_texture_ptr(WIDGET* w)
 {
-	w->binds.binds[hash(key) % w->binds.size].system = fn;
-	SDL_Log("hash: %d", hash(key) % w->binds.size);
+	switch (w->type)
+	{
+		case W_LABEL:
+        return &w->label.tex;
+		break;
+		case W_TEXT_INPUT:
+        return &w->text_input.tex;
+		break;
+	}
+    
+	return NULL;
 }
 
-void widget_bind(WIDGET* w, char* key, u8(*fn)(WIDGET*, EVENT))
+DEF_GET_WIDGET_ATTR_PTR_FN(SDL_Rect*, get_widget_rect_ptr, .tex.rect)
+DEF_GET_WIDGET_ATTR_FN(SDL_Rect, get_widget_rect, .tex.rect, OUT_OF_BOUNDS_RECT)
+
+void widget_bind_system(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
 {
-	w->binds.binds[hash(key) % w->binds.size].custom = fn;
-	SDL_Log("hash: %d", hash(key) % w->binds.size);
+	w->binds.binds[hash(bind) % w->binds.size].system = fn;
+	SDL_Log("hash: %d", hash(bind) % w->binds.size);
+}
+
+void widget_bind(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
+{
+	w->binds.binds[hash(bind) % w->binds.size].custom = fn;
+	SDL_Log("hash: %d", hash(bind) % w->binds.size);
 }
 
 char* widget_type_name(WIDGET w)
@@ -63,6 +84,15 @@ void widget_init(WIN* w, WIDGET* widget, int type)
 	widget->render_fn = NULL;
 }
 
+void widget_localize_mouse_location(WIDGET* w, EVENT* e)
+{
+	// make x and y of mouse location relative to the position of the widgets
+	SDL_Rect rect = get_widget_rect(w);
+	e->motion.x = abs(rect.x - e->motion.x);
+	e->motion.y = abs(rect.y - e->motion.y);
+	SDL_Log("localize mouse: %d %d", e->motion.x, e->motion.y);
+}
+
 
 WIDGET create_label(WIN* w, int x, int y, char* text)
 {
@@ -84,7 +114,7 @@ WIDGET create_label(WIN* w, int x, int y, char* text)
 
 
 
-u8 text_input_handle_keydown(WIDGET* w, EVENT e)
+u8 text_input_handle_keydown BIND_FN_PARAMS
 {
 	// TEXTURE* tex = &w->text_input.tex;
 	// TODO NON LATIN INPUT
@@ -144,45 +174,6 @@ WIDGET create_text_input(WIN* w, int x, int y, char* text)
 	return widget;
 }
 
-
-DEF_GET_WIDGET_ATTR_PTR_FN(SDL_Rect*, get_widget_rect_ptr, .tex.rect)
-
-// SDL_Rect* get_widget_rect_ptr(WIDGET* w)
-// {
-// switch (w->type)
-// {
-// case W_LABEL:
-// return &w->label.tex.rect;
-// break;
-// }
-
-// return &OUT_OF_BOUNDS_RECT;
-// }
-
-
-DEF_GET_WIDGET_ATTR_FN(SDL_Rect, get_widget_rect, .tex.rect, OUT_OF_BOUNDS_RECT)
-// SDL_Rect get_widget_rect(WIDGET* w)
-// {
-// return *get_widget_rect_ptr(w);
-// }
-
-
-
-DEF_GET_WIDGET_ATTR_PTR_FN(TEXTURE*, get_widget_textures, .tex)
-TEXTURE* get_widget_texture_ptr(WIDGET* w)
-{
-	switch (w->type)
-	{
-		case W_LABEL:
-        return &w->label.tex;
-		break;
-		case W_TEXT_INPUT:
-        return &w->text_input.tex;
-		break;
-	}
-    
-	return NULL;
-}
 
 void widget_handle_attention_get(WIDGET* w)
 {

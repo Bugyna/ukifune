@@ -15,20 +15,38 @@ struct PLAYER
 WIN win;
 WORLD world;
 
-
-u8 test_drag(WIDGET* w, EVENT e)
+u8 test_drag(WIDGET* w, EVENT e, char* bind)
 {
-	if (e.type == SDL_MOUSEMOTION) {
-		if (!e.button.button) return 0;
-		TEXTURE* t = get_widget_texture_ptr(w);
-		SDL_Log("aaaaa: %d %d %d\n", t->rect.x, e.motion.x, w->last_click_rx);
+	// if (e.type == SDL_MOUSEMOTION) {
+		// if (!e.button.button) return 0;
+		
+		// BIND* b = get_bind(w->binds, bind);
+		BIND** b = get_binds_from_key(w->binds, bind);
+		BIND* c = b[0];
+		// TEXTURE* t = get_widget_texture_ptr(w);/
+		SDL_Rect* rect = get_widget_rect_ptr(w);
+		// SDL_Log("aaaaa: %s %d %d %d\n", bind, t->rect.x, e.motion.x, c->rx);
+		// SDL_Log("aaaaa: %s %d %d %d\n", bind, rect->x, e.motion.x, c->rx);
 		// int tmp = t->rect.x;
-		t->rect.x = e.motion.x - w->last_click_rx;
-		t->rect.y = e.motion.y - w->last_click_ry;
-		// t->rect.y = w->win_parent->mouse_y + (t->rect.y - w->win_parent->mouse_y);
-	}
+		rect->x = e.motion.x - c->rx;
+		rect->y = e.motion.y - c->ry;
 
-	return 0;
+		// t->rect.x = e.motion.x - c->rx;
+		// t->rect.y = e.motion.y - c->ry;
+		// t->rect.y = w->win_parent->mouse_y + (t->rect.y - w->win_parent->mouse_y);
+	// }
+
+	return 1;
+}
+
+u8 test_drag_x(WIDGET* w, EVENT e, char* bind)
+{
+	BIND** b = get_binds_from_key(w->binds, bind);
+	BIND* c = b[0];
+	SDL_Rect* rect = get_widget_rect_ptr(w);
+	rect->x = e.motion.x - c->rx;
+
+	return 1;
 }
 
 int main () {
@@ -48,6 +66,7 @@ int main () {
 	
 	SDL_Event event;
 	bool moving = false;
+	// parse_bind_key("<mouse_right><mouse_move>");
 
 	
 	uint32_t ticks = SDL_GetTicks();
@@ -58,8 +77,8 @@ int main () {
 
 	win_add_child(&win, create_label(&win, 200, 200, "test"));
 	win.children[1].label.tex = create_texture_from_image(&win, -100, 200, 200, 200, "test.jpg");
-	win_add_child(&win, create_label(&win, 400, 300, "áíýáí"));
-	win_add_child(&win, create_label(&win, 600, 300, "áíýáídwad"));
+	win_add_child(&win, create_label(&win, 400, 300, "áídwaáí"));
+	win_add_child(&win, create_label(&win, 600, 300, "áídwaídwad"));
 	win_add_child(&win, create_text_input(&win, 500, 400, "atak"));
 	// focus_set(&win, &win.children[0]);
 	focus_set(&win, &win.children[3]);
@@ -70,7 +89,12 @@ int main () {
 	
 	// win_set_render_fn(&win, win_render_test);
 	// widget_bind(&win.children[3], "<keypress>", test_keypress);
-	widget_bind(&win.children[3], "<mouse_right_drag>", test_drag);
+	// widget_bind(&win.children[0], "<mouse_right_drag>", win_close);
+	widget_bind(&win.children[3], "z<mouse_move>", test_drag);
+	widget_bind(&win.children[3], "z<mouse_right><mouse_move>", test_drag_x);
+	// widget_bind(&win.children[3], "<z>", test_drag);
+	// widget_bind(&win.children[3], "<mouse_middle><mouse_move>", test_drag);
+	widget_bind(&win.children[1], "<mouse_middle><mouse_move>", test_drag);
 	// win_bind(&win, "<mousemove>", test_mousemove);
 	// exit(1);
 
@@ -102,18 +126,19 @@ int main () {
 				// SDL_Log("a:: %d\n", event.key.keysym.sym);
 				break;
 				
-				case SDL_TEXTINPUT:
-				win_handle_keydown(&win, event);
-				// SDL_Log("textinput: %s %ld", event.text.text, strlen(event.text.text));
-				break;
+				// case SDL_TEXTINPUT:
+				// win_handle_keydown(&win, event);
+				// // SDL_Log("textinput: %s %ld", event.text.text, strlen(event.text.text));
+				// break;
 				
-				case SDL_TEXTEDITING:
-				// SDL_Log("textedit: %s %d %d", event.edit.text, event.edit.start, event.edit.length);
-				win_handle_keydown(&win, event);
-				break;
+				// case SDL_TEXTEDITING:
+				// // SDL_Log("textedit: %s %d %d", event.edit.text, event.edit.start, event.edit.length);
+				// win_handle_keydown(&win, event);
+				// break;
 				
-				case SDL_KEYUP:
-				break;
+				// case SDL_KEYUP:
+					// win_handle_keyup(&win, event);
+				// break;
 			}
 			win_render_default(&win);
 		}
