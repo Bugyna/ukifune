@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL2/SDL_video.h>
+#include <math.h>
 #include "hashmap.h"
+#include "linked_list.h"
 
 #define i8 int8_t
 #define i16 int16_t
@@ -67,7 +69,14 @@ ARGB convert_hex_to_argb(int hex)
 
 uint32_t hash(const char* key)
 {
-	// return FNV1A_Pippip_Yurii(key, strlen(key));
+	// uint32_t h;
+	// for (int i = 0; i < strlen(key); i++)
+	// {
+		// h += ((int)pow(key[i], 3) << 16) ^ key[i];
+	// }
+
+	// return h;
+	// return strlen(key) * key[0];
 	return strlen(key);
 }
 

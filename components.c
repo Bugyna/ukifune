@@ -3,7 +3,43 @@
 #include "widgets.h"
 
 
-TEXTURE create_texture_from_text(WIN* win, int x, int y, char* text, SDL_Color color)
+void change_texture_to_int(WIN* win, TEXTURE* t, int num, SDL_Color color)
+{
+	char* text = malloc(20);
+	sprintf(text, "%d", num);
+
+	SDL_FreeSurface(t->surf);
+	t->surf = TTF_RenderUTF8_Blended(global_font, text, color);
+	free(text);
+	SDL_DestroyTexture(t->tex);
+	t->tex = SDL_CreateTextureFromSurface(win->renderer, t->surf);
+	t->rect = (SDL_Rect){t->rect.x, t->rect.y, t->surf->w, t->surf->h};
+}
+
+void change_texture_to_text(WIN* win, TEXTURE* t, char* text, SDL_Color color)
+{
+	SDL_FreeSurface(t->surf);
+	t->surf = TTF_RenderUTF8_Blended(global_font, text, color);
+	SDL_DestroyTexture(t->tex);
+	t->tex = SDL_CreateTextureFromSurface(win->renderer, t->surf);
+	t->rect = (SDL_Rect){t->rect.x, t->rect.y, t->surf->w, t->surf->h};
+}
+
+TEXTURE create_texture_from_int(WIN* win, int x, int y, int num, SDL_Color color)
+{
+	TEXTURE tex;
+	char* text = malloc(20);
+	sprintf(text, "%d", num);
+
+	tex.surf = TTF_RenderUTF8_Blended(global_font, text, color);
+	free(text);
+	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
+	tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};
+
+	return tex;
+}
+
+TEXTURE create_texture_from_text(WIN* win, int x, int y, const char* text, SDL_Color color)
 {
 	TEXTURE tex;
 	tex.surf = TTF_RenderUTF8_Blended(global_font, text, color);

@@ -61,7 +61,6 @@ enum
 
 #define EVENT SDL_Event
 
-
 SDL_Color* global_colors;
 // typedef struct EVENT EVENT;
 
@@ -80,17 +79,24 @@ typedef struct WIDGET WIDGET;
 #define BIND_FN_PARAMS (WIDGET* w, EVENT e, char* bind)
 #define WIN_BIND_FN_PARAMS (WIN* w, EVENT e, char* bind)
 
+void alloc_win_hashmap(BINDS_HASHMAP* h);
+
 
 struct BIND
 {
-	char* bind;
+	const char* bind;
 	u8(*system)BIND_FN_PARAMS;
 	u8(*custom)BIND_FN_PARAMS;
+
 	EVENT last_event;
+	int x, y;
 	int rx, ry;
+
+	BIND* next;
 };
 
-void alloc_win_hashmap(BINDS_HASHMAP* h);
+// DEFINE_HASHMAP(BINDS, bind, BIND, bind)
+
 struct BINDS_HASHMAP
 {
 	uint32_t size;
@@ -169,6 +175,8 @@ struct WIDGET
 
 };
 
+DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
+
 struct WIN
 {
 	SDL_Window* win;
@@ -176,21 +184,36 @@ struct WIN
 
 	SDL_Event* event;
 
+	int width, height;
+
 	WIDGET* children;
 	WIDGET* focus;
 	WIDGET* attention;
+	WIDGET* lock;
 
-	WIDGET** render_list;
+	WIDGET** widget_render_list;
+	ENTITY** render_queue;
+	PRIMITIVE_LIST primitive_list;
+
 	STYLE style;
 
 	BINDS_HASHMAP binds;
 
 	int child_index, render_index;
-
+	
 	int mouse_x, mouse_y;
 	EVENT last_click;
 	EVENT last_click_release;
 	EVENT last_keyboard;
 	int mouse_scroll;
 };
+
+
+// DEF_GET_WIDGET_ATTR_PTR_FN(STRING*, get_widget_string_ptr, .text)
+// DEF_GET_WIDGET_ATTR_FN(STRING, get_widget_string, .text, ((STRING){.str=NULL, .index=0, .size=0}))
+
+// DEF_GET_WIDGET_ATTR_PTR_FN(TEXTURE*, get_widget_textures, .tex)
+
+// DEF_GET_WIDGET_ATTR_PTR_FN(SDL_Rect*, get_widget_rect_ptr, .tex.rect)
+// DEF_GET_WIDGET_ATTR_FN(SDL_Rect, get_widget_rect, .tex.rect, OUT_OF_BOUNDS_RECT)
 

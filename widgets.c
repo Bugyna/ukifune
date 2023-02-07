@@ -2,9 +2,11 @@
 #include "widgets.h"
 // bool win_check_collision(WIN* w, 
 
-
-
 DEF_GET_WIDGET_ATTR_PTR_FN(TEXTURE*, get_widget_textures, .tex)
+
+DEF_GET_WIDGET_ATTR_PTR_FN(SDL_Rect*, get_widget_rect_ptr, .tex.rect)
+DEF_GET_WIDGET_ATTR_FN(SDL_Rect, get_widget_rect, .tex.rect, OUT_OF_BOUNDS_RECT)
+
 TEXTURE* get_widget_texture_ptr(WIDGET* w)
 {
 	switch (w->type)
@@ -20,19 +22,73 @@ TEXTURE* get_widget_texture_ptr(WIDGET* w)
 	return NULL;
 }
 
-DEF_GET_WIDGET_ATTR_PTR_FN(SDL_Rect*, get_widget_rect_ptr, .tex.rect)
-DEF_GET_WIDGET_ATTR_FN(SDL_Rect, get_widget_rect, .tex.rect, OUT_OF_BOUNDS_RECT)
+char** get_bind_names_from_key(const char* bind)
+{
+	char** ret = calloc(10, sizeof(char*));
+	char* tmp = malloc(30);
+	
+	int len = strlen(bind), size = 0, offset = 0, i = 0;
+	SDL_Log("len: %d", len);
+	for ( ; offset < len; offset++)
+	{
+		tmp[size] = '\0';
+		// SDL_Log("tmp: %s %d	", tmp, offset);
+		if (size) tmp[size++] = bind[offset];
+		if (bind[offset] == '<') tmp[size++] = bind[offset];
+		else if (bind[offset] == '>') {
+			tmp[size++] = '\0';
+			ret[i] = malloc(size);
+			strcpy(ret[i++], tmp);
+			SDL_Log("tmp end: %s", tmp);
+			size = 0;
+		}
+	}
+
+	free(tmp);
+	return ret;
+}
 
 void widget_bind_system(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
 {
+	w->binds.binds[hash(bind) % w->binds.size].bind = bind;
 	w->binds.binds[hash(bind) % w->binds.size].system = fn;
 	SDL_Log("hash: %d", hash(bind) % w->binds.size);
 }
 
-void widget_bind(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
+void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 {
-	w->binds.binds[hash(bind) % w->binds.size].custom = fn;
-	SDL_Log("hash: %d", hash(bind) % w->binds.size);
+	int h = hash(bind) % w->binds.size;
+	BIND* b = &w->binds.binds[h];
+	while (b->bind != NULL)
+		b = b->next;
+	
+	b->bind = bind;
+	b->custom = fn;
+	SDL_Log("hash: %d", h);
+
+	char** individual = get_bind_names_from_key(bind);
+	for (int i = 0; i < 5; i++)
+	{
+		if (individual[i] == NULL) break;
+		SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
+		// w->binds.binds[hash(individual[i]) % w->binds.size].bind = individual[i];
+		b = &w->binds.binds[hash(individual[i]) % w->binds.size];
+		a:
+		if (b->bind != NULL && strcmp(b->bind, bind)) {
+			SDL_Log("dwad: %s", b->bind);
+			if (b->next == NULL) {
+				b->next = calloc(1, sizeof(BIND));
+				b->next->bind = NULL;
+			}
+			b = b->next;
+			goto a;
+		}
+		// while (b->bind != NULL) {
+			// b = b->next;
+		// }
+		b->bind = individual[i];
+		SDL_Log("get bind name from key: %s", b->bind);
+	}
 }
 
 char* widget_type_name(WIDGET w)
@@ -94,7 +150,7 @@ void widget_localize_mouse_location(WIDGET* w, EVENT* e)
 }
 
 
-WIDGET create_label(WIN* w, int x, int y, char* text)
+WIDGET create_label(WIN* w, int x, int y, const char* text)
 {
 	SDL_Log("CREATING LABEL %s", text);
 	WIDGET widget;
@@ -149,6 +205,17 @@ void render_text_input(WIDGET* w)
 {
 	SDL_RenderCopy(w->win_parent->renderer, w->text_input.tex.tex, NULL, &w->text_input.tex.rect);
 	SDL_RenderCopy(w->win_parent->renderer, w->text_input.cursor.tex, NULL, &w->text_input.cursor.rect);
+}
+
+
+void change_widget_texture_text(WIDGET* w, char* text)
+{
+	change_texture_to_text(w->win_parent, get_widget_texture_ptr(w), text, w->style.fg);
+}
+
+void change_widget_texture_int(WIDGET* w, int num)
+{
+	change_texture_to_int(w->win_parent, get_widget_texture_ptr(w), num, w->style.fg);
 }
 
 

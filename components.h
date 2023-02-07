@@ -16,11 +16,27 @@ enum
 	C_TEXTURE,
 };
 
+typedef enum
+{
+	P_RECT=1,
+	P_POINT,
+} PRIMITIVE_TYPE;
+
 typedef struct COMPONENT COMPONENT;
 typedef struct COLLIDER COLLIDER;
 typedef struct RIGIDBODY RIGIDBODY;
 typedef struct TEXTURE TEXTURE;
 typedef struct STRING STRING;
+
+typedef struct
+{
+	PRIMITIVE_TYPE type;
+	union
+	{
+		SDL_Rect r;
+		SDL_Point p;
+	};
+} PRIMITIVE;
 
 struct STRING
 {
