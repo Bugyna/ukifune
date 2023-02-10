@@ -28,19 +28,36 @@ char** get_bind_names_from_key(const char* bind)
 	char* tmp = malloc(30);
 	
 	int len = strlen(bind), size = 0, offset = 0, i = 0;
-	SDL_Log("len: %d", len);
+	bool in_special = false;
+	// SDL_Log("len: %d", len);
 	for ( ; offset < len; offset++)
 	{
 		tmp[size] = '\0';
 		// SDL_Log("tmp: %s %d	", tmp, offset);
-		if (size) tmp[size++] = bind[offset];
-		if (bind[offset] == '<') tmp[size++] = bind[offset];
-		else if (bind[offset] == '>') {
+
+		if (!in_special && bind[offset] == '<') {
+			tmp[size++] = bind[offset];
+			in_special = true;
+		}
+
+		else if (in_special && bind[offset] == '>') {
+			tmp[size++] = bind[offset];
 			tmp[size++] = '\0';
 			ret[i] = malloc(size);
 			strcpy(ret[i++], tmp);
-			SDL_Log("tmp end: %s", tmp);
+			// SDL_Log("tmp end: %s", tmp);
+			in_special = false;
 			size = 0;
+		}
+
+		else if (in_special && size) tmp[size++] = bind[offset];
+
+		else {
+			// SDL_Log("dwaere %c %d", bind[offset], offset);
+			ret[i] = malloc(3);
+			tmp[0] = bind[offset];
+			tmp[1] = '\0';
+			strcpy(ret[i++], tmp);
 		}
 	}
 
@@ -64,18 +81,18 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 	
 	b->bind = bind;
 	b->custom = fn;
-	SDL_Log("hash: %d", h);
+	// SDL_Log("hash: %d", h);
 
 	char** individual = get_bind_names_from_key(bind);
 	for (int i = 0; i < 5; i++)
 	{
 		if (individual[i] == NULL) break;
-		SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
+		// SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
 		// w->binds.binds[hash(individual[i]) % w->binds.size].bind = individual[i];
 		b = &w->binds.binds[hash(individual[i]) % w->binds.size];
 		a:
 		if (b->bind != NULL && strcmp(b->bind, bind)) {
-			SDL_Log("dwad: %s", b->bind);
+			// SDL_Log("dwad: %s", b->bind);
 			if (b->next == NULL) {
 				b->next = calloc(1, sizeof(BIND));
 				b->next->bind = NULL;
@@ -87,7 +104,7 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 			// b = b->next;
 		// }
 		b->bind = individual[i];
-		SDL_Log("get bind name from key: %s", b->bind);
+		// SDL_Log("get bind name from key: %s", b->bind);
 	}
 }
 

@@ -26,7 +26,7 @@ u8 test_drag(WIDGET* w, EVENT e, char* bind)
 		for (int i = 0; i < 5; i++)
 		{
 			if (b[i] == NULL) break;
-			SDL_Log("drag last event: %s", b[i]->bind);
+			// SDL_Log("drag last event: %s", b[i]->bind);
 		}
 		// TEXTURE* t = get_widget_texture_ptr(w);/
 		SDL_Rect* rect = get_widget_rect_ptr(w);
@@ -50,16 +50,16 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 		// if (!e.button.button) return 0;
 		
 		// BIND* b = get_bind(w->binds, bind);
-		SDL_Log("1: %s", bind);
+		// SDL_Log("1: %s", bind);
 		BIND** b = get_binds_from_key(w->binds, bind);
 		char** x = get_bind_names_from_key(bind);
-		SDL_Log("2: %s", bind);
+		// SDL_Log("2: %s", bind);
 		BIND* c = b[0];
 		// for (int i = 0; i < 5; i++)
 		// {
 			// if (x[i] == NULL) break;
 			// SDL_Log("[ %s ]   test drag 2: %s %s", w->name, x[i], b[i]->bind);
-			// SDL_Log("drag last event: %s %s", b[i]->bind, bind);
+			// // SDL_Log("drag last event: %s %s", b[i]->bind, bind);
 		// }
 		// TEXTURE* t = get_widget_texture_ptr(w);/
 		// SDL_Rect* rect = get_widget_rect_ptr(w);
@@ -69,11 +69,11 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 
 		// win.primitive_list.first->next = NULL;
 		// SDL_Log("rect: %d %d %d %d", c->x, c->y, e.motion.x, e.motion.y);
-		SDL_Log("whatefuickc [ %s ] %s\n\n", w->name, c->bind);
+		// SDL_Log("whatefuickc [ %s ] %s\n\n", w->name, c->bind);
 		SDL_Rect r = {.x=c->x, .y=c->y, .w=e.motion.x-c->x, .h=e.motion.y-c->y};
 		PRIMITIVE p = {.type=P_RECT, .r=r};
 		PRIMITIVE_LIST_APPEND(&w->win_parent->primitive_list, p);
-		SDL_Log("dddddd: %d %d", w->win_parent->primitive_list.last->p.r.x, w->win_parent->primitive_list.last->p.r.y);
+		// SDL_Log("dddddd: %d %d", w->win_parent->primitive_list.last->p.r.x, w->win_parent->primitive_list.last->p.r.y);
 		// SDL_SetRenderDrawColor(w->win_parent->renderer, 255, 0, 75, 255);
 		// SDL_RenderDrawRect(w->win_parent->renderer, &r);
 		// SDL_RenderPresent(w->win_parent->renderer);
@@ -131,10 +131,11 @@ int main () {
 	win_add_child(&win, create_text_input(&win, 500, 400, "atak"));
 	win_add_child(&win, create_label(&win, 1000, 100, "atak"));
 	win_add_child(&win, create_label(&win, 1000, 120, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 140, "atak"));
+	win_add_child(&win, create_label(&win, 1000, 140, "atak"));	
 	win_add_child(&win, create_label(&win, 1000, 160, "atak"));
 	win_add_child(&win, create_label(&win, 1000, 180, "atak"));
 	win_add_child(&win, create_label(&win, 1000, 200, "atak"));
+	win_add_child(&win, create_label(&win, 1000, 220, "NULL"));
 	// win_add_child(&win, create_label(&win, 1000, 180, "atak"));
 	focus_set(&win, &win.children[0]);
 	attention_set(&win, &win.children[0]);
@@ -154,24 +155,22 @@ int main () {
 	// widget_bind(&win.children[3], "z<mouse_move>", test_drag);
 	// widget_bind(&win.children[3], "z<mouse_right><mouse_move>", test_drag_x);
 	// widget_bind(&win.children[3], "<z>", test_drag);
+	widget_bind(&win.children[0], "<Escape>", win_close);
+	widget_bind(&win.children[3], "<mouse_right><mouse_move>", test_drag_x);
 	widget_bind(&win.children[3], "<mouse_middle><mouse_move>", test_drag);
 	widget_bind(&win.children[0], "<mouse_left><mouse_move>", test_drag_2);
+	widget_bind(&win.children[0], "z<mouse_move>", test_drag_2);
 	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win.children[3].binds.size);
 	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win.children[3].binds.size);
 	widget_bind(&win.children[1], "<mouse_middle><mouse_move>", test_drag);
 	// win_bind(&win, "<mousemove>", test_mousemove);
 	// exit(1);
 
+	char* bind;
 
 	SDL_StartTextInput();
 	while (run) {
 		ticks = SDL_GetTicks();
-		change_widget_texture_int(&win.children[5], win.mouse_x);
-		change_widget_texture_int(&win.children[6], win.mouse_y);
-		change_widget_texture_int(&win.children[7], FPS_COUNT);
-		change_widget_texture_int(&win.children[8], DELTA_TIME);
-		change_widget_texture_text(&win.children[9], win.focus->name);
-		change_widget_texture_text(&win.children[10], win.attention->name);
 		// if (win.focus->name != NULL) change_widget_texture_text(&win.children[9], win.focus->name);
 		win.children[5].label.tex.rect.x+=1*DELTA_TIME;
 		if (win.children[5].label.tex.rect.x > 1200) win.children[5].label.tex.rect.x = 0;
@@ -199,8 +198,8 @@ int main () {
 				break;
 				
 				case SDL_KEYDOWN:
-					if (win.focus == &win.children[3]) win.focus = &win.children[0];
-					else win.focus = &win.children[3];
+					// if (win.focus == &win.children[3]) win.focus = &win.children[0];
+					// else win.focus = &win.children[3];
 					
 					win_handle_keydown(&win, event);
 					// SDL_Log("a:: %d\n", event.key.keysym.sym);
@@ -220,10 +219,17 @@ int main () {
 					// win_handle_keyup(&win, event);
 				// break;
 			}
-			// win.lock = NULL;
+			change_widget_texture_int(&win.children[5], win.mouse_x);
+			change_widget_texture_int(&win.children[6], win.mouse_y);
+			change_widget_texture_int(&win.children[7], FPS_COUNT);
+			change_widget_texture_int(&win.children[8], DELTA_TIME);
+			change_widget_texture_text(&win.children[9], win.focus->name);
+			change_widget_texture_text(&win.children[10], win.attention->name);
+			if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
 		}
 		win_render_default(&win);
 		cap_fps(&ticks);
+		// win.lock = NULL;
 		// cap_fps_fixed(&ticks, 1000/120);
 	}
 
