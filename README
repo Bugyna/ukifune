@@ -1,1 +1,10 @@
 The word ukifune likens an unreliable person or thing to a toy boat as it bobs across the water.
+
+
+using SDL2
+(Windows:
+	SDL2: 2.26.3
+	SDL2_image: 2.6.3
+	SDL2_ttf: 2.20.2
+On windows the source for SDL2 is slightly modified, because I copied the include source files of SDL2_image and SDL2_ttf to the SDL2 include folder.
+)
