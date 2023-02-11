@@ -98,7 +98,7 @@ u8 test_drag_x(WIDGET* w, EVENT e, char* bind)
 	return 1;
 }
 
-int main () {
+int main (int argc, char* argv[]) {
 	win_init(&win);
 	world_init(&world);
 	
