@@ -23,6 +23,7 @@ u8 test_drag(WIDGET* w, EVENT e, char* bind)
 		// BIND* b = get_bind(w->binds, bind);
 		BIND** b = get_binds_from_key(w->binds, bind);
 		BIND* c = b[0];
+		if (c == NULL) return 1;
 		for (int i = 0; i < 5; i++)
 		{
 			if (b[i] == NULL) break;
@@ -55,6 +56,7 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 		char** x = get_bind_names_from_key(bind);
 		// SDL_Log("2: %s", bind);
 		BIND* c = b[0];
+		if (c == NULL) return 1;
 		// for (int i = 0; i < 5; i++)
 		// {
 			// if (x[i] == NULL) break;
@@ -71,7 +73,7 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 		// SDL_Log("rect: %d %d %d %d", c->x, c->y, e.motion.x, e.motion.y);
 		// SDL_Log("whatefuickc [ %s ] %s\n\n", w->name, c->bind);
 		SDL_Rect r = {.x=c->x, .y=c->y, .w=e.motion.x-c->x, .h=e.motion.y-c->y};
-		PRIMITIVE p = {.type=P_RECT, .r=r};
+		PRIMITIVE p = {.type=P_RECT, .color=(SDL_Color){150, 150, 150}, .r=r};
 		PRIMITIVE_LIST_APPEND(&w->win_parent->primitive_list, p);
 		// SDL_Log("dddddd: %d %d", w->win_parent->primitive_list.last->p.r.x, w->win_parent->primitive_list.last->p.r.y);
 		// SDL_SetRenderDrawColor(w->win_parent->renderer, 255, 0, 75, 255);
@@ -92,9 +94,16 @@ u8 test_drag_x(WIDGET* w, EVENT e, char* bind)
 {
 	BIND** b = get_binds_from_key(w->binds, bind);
 	BIND* c = b[0];
+	if (c == NULL) return 1;
 	SDL_Rect* rect = get_widget_rect_ptr(w);
 	rect->x = e.motion.x - c->rx;
 
+	return 1;
+}
+
+u8 empty_test(WIDGET* w, EVENT e, char* bind)
+{
+	SDL_Log("empty test");
 	return 1;
 }
 
@@ -160,6 +169,7 @@ int main (int argc, char* argv[]) {
 	widget_bind(&win.children[3], "<mouse_middle><mouse_move>", test_drag);
 	widget_bind(&win.children[0], "<mouse_left><mouse_move>", test_drag_2);
 	widget_bind(&win.children[0], "z<mouse_move>", test_drag_2);
+	widget_bind(&win.children[0], "a<mouse_move>", empty_test);
 	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win.children[3].binds.size);
 	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win.children[3].binds.size);
 	widget_bind(&win.children[1], "<mouse_middle><mouse_move>", test_drag);
@@ -167,20 +177,27 @@ int main (int argc, char* argv[]) {
 	// exit(1);
 
 	char* bind;
+	// BIND* x = get_bind(win.children[0].binds, "<mouse_right><mouse_move>");
+	// if (x != NULL && x->bind != NULL)
+		// SDL_Log("dwa: %s", x->bind);
 
+	// x = get_bind(win.children[0].binds, "<mouse_middle><mouse_move>");
+	// if (x != NULL && x->bind != NULL)
+		// SDL_Log("dwa: %s", x->bind);
+	// exit(1);
 	SDL_StartTextInput();
-	while (run) {
+	while (win.is_running) {
 		ticks = SDL_GetTicks();
 		// if (win.focus->name != NULL) change_widget_texture_text(&win.children[9], win.focus->name);
 		win.children[5].label.tex.rect.x+=1*DELTA_TIME;
 		if (win.children[5].label.tex.rect.x > 1200) win.children[5].label.tex.rect.x = 0;
 		// change_widget_texture_text(&win.children[5], "dwa");
 		while (SDL_PollEvent(&event)) {
-			PRIMITIVE_LIST_POP(&win.primitive_list);
+			// PRIMITIVE_LIST_POP(&win.primitive_list);
 			// SDL_Log("event: %d", event.type);
 			switch (event.type) {
 				case SDL_QUIT:
-					run = false;
+					win.is_running = false;
 				break;
 
 				case SDL_WINDOWEVENT:
@@ -192,7 +209,13 @@ int main (int argc, char* argv[]) {
 					win_handle_mouse_button_down(&win, event);
 				break;
 
+				case SDL_MOUSEBUTTONUP:
+					// SDL_Log("a:: %d\n", event.button.button);
+					win_handle_mouse_button_up(&win, event);
+				break;
+
 				case SDL_MOUSEMOTION:
+					PRIMITIVE_LIST_POP(&win.primitive_list);
 					win_handle_mouse_move(&win, event);
 					// SDL_Log("a:: %d\n", event.button.button);
 				break;
@@ -226,6 +249,7 @@ int main (int argc, char* argv[]) {
 			change_widget_texture_text(&win.children[9], win.focus->name);
 			change_widget_texture_text(&win.children[10], win.attention->name);
 			if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
+			else change_widget_texture_text(&win.children[11], "NULL");
 		}
 		win_render_default(&win);
 		cap_fps(&ticks);
@@ -234,7 +258,6 @@ int main (int argc, char* argv[]) {
 	}
 
 
-	uki_destroy_win(&win);
-	// uki_destroy_world();
+	uki_close(&win);
 	return 0;
 }

@@ -35,7 +35,7 @@ enum
 {\
 	switch (w->type)\
 	{\
-		case W_LABEL:\
+		case W_LABEL: case W_WIN:\
 			return &w->label attr;\
 		break;\
 		case W_TEXT_INPUT:\
@@ -49,7 +49,7 @@ enum
 {\
 	switch (w->type)\
 	{\
-		case W_LABEL:\
+		case W_LABEL: case W_WIN:\
 			return w->label attr;\
 		break;\
 		case W_TEXT_INPUT:\
@@ -84,7 +84,7 @@ void alloc_win_hashmap(BINDS_HASHMAP* h);
 
 struct BIND
 {
-	const char* bind;
+	char* bind;
 	u8(*system)BIND_FN_PARAMS;
 	u8(*custom)BIND_FN_PARAMS;
 
@@ -183,6 +183,8 @@ struct WIN
 	SDL_Renderer* renderer;
 
 	SDL_Event* event;
+
+	bool is_running;
 
 	int width, height;
 

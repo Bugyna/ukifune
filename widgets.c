@@ -11,7 +11,7 @@ TEXTURE* get_widget_texture_ptr(WIDGET* w)
 {
 	switch (w->type)
 	{
-		case W_LABEL:
+		case W_LABEL: case W_WIN:
         return &w->label.tex;
 		break;
 		case W_TEXT_INPUT:
@@ -76,36 +76,57 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 {
 	int h = hash(bind) % w->binds.size;
 	BIND* b = &w->binds.binds[h];
-	while (b->bind != NULL)
+	for ( ; b->bind != NULL ; ){
 		b = b->next;
-	
-	b->bind = bind;
+	}
+
+	// b->bind = bind;
+	b->bind = malloc(strlen(bind)+1);
+	strcpy(b->bind, bind);
 	b->custom = fn;
+	if (b->next == NULL) {
+		b->next = calloc(1, sizeof(BIND));
+		b->next->bind = NULL;
+	}
+
 	// SDL_Log("hash: %d", h);
 
+	// SDL_Log("\n\n0: %s", bind);
 	char** individual = get_bind_names_from_key(bind);
 	for (int i = 0; i < 5; i++)
 	{
 		if (individual[i] == NULL) break;
+		// SDL_Log("1: %s", individual[i]);
 		// SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
 		// w->binds.binds[hash(individual[i]) % w->binds.size].bind = individual[i];
 		b = &w->binds.binds[hash(individual[i]) % w->binds.size];
 		a:
-		if (b->bind != NULL && strcmp(b->bind, bind)) {
-			// SDL_Log("dwad: %s", b->bind);
-			if (b->next == NULL) {
+		if (b->bind != NULL && strcmp(b->bind, individual[i])) {
+			// SDL_Log("dwad: [ %s ] %s %s %s", w->name, bind, b->bind, individual[i]);
+			if (b->next == NULL || b->next->bind == NULL) {
+				// SDL_Log("3: %s", b->bind);
 				b->next = calloc(1, sizeof(BIND));
 				b->next->bind = NULL;
 			}
 			b = b->next;
+			// if (b->bind != NULL) SDL_Log("next: %s", b->bind);
 			goto a;
 		}
 		// while (b->bind != NULL) {
 			// b = b->next;
 		// }
-		b->bind = individual[i];
+
+		// if (b->bind != NULL) SDL_Log("4: %s", b->bind);
+		if (b->bind == NULL) {
+			b->bind = malloc(strlen(individual[i])+1);
+			strcpy(b->bind, individual[i]);
+		}
+		// b->bind = individual[i];
 		// SDL_Log("get bind name from key: %s", b->bind);
 	}
+
+	free(individual);
+	// SDL_Log("5");
 }
 
 char* widget_type_name(WIDGET w)
@@ -113,7 +134,7 @@ char* widget_type_name(WIDGET w)
 	// return WIDGET_TYPE(w.type);
 	switch (w.type)
 	{
-		case W_LABEL:
+		case W_LABEL: case W_WIN:
         return "LABEL";
 		break;
         
@@ -202,13 +223,16 @@ u8 text_input_handle_keydown BIND_FN_PARAMS
 	// }
     
     
-	w->text_input.text.index += strlen(e.text.text);
+	// w->text_input.text.index += strlen(e.text.text);
 	if (w->text_input.text.index >= w->text_input.text.size) {
 		w->text_input.text.size += 64+strlen(e.text.text);
 		w->text_input.text.str = realloc(w->text_input.text.str, w->text_input.text.size);
 	}
 	// SDL_Log("str debug: %d %d %ld", w->text_input.text.size, w->text_input.text.index, strlen(e.text.text));
-	strcat(w->text_input.text.str, e.text.text);
+	// strcat(w->text_input.text.str, e.text.text);
+	w->text_input.text.str[w->text_input.text.index++] = e.key.keysym.sym;
+	w->text_input.text.str[w->text_input.text.index] = '\0';
+	SDL_Log("dwa: %c", e.key.keysym.sym);
 	// w->text_input.text.str = e.text.text;
 	// SDL_Log("idek: %s", w->text_input.text.str);
     

@@ -31,6 +31,7 @@ typedef struct STRING STRING;
 typedef struct
 {
 	PRIMITIVE_TYPE type;
+	SDL_Color color;
 	union
 	{
 		SDL_Rect r;

@@ -53,6 +53,8 @@ void win_init(WIN* w)
 
 
 	SDL_GetWindowSize(w->win, &w->width, &w->height);
+
+	w->is_running = true;
 	
 	w->binds.size = 20;
 	w->binds.index = 0;
@@ -116,7 +118,6 @@ u8 (*get_system_bind_ptr(BINDS_HASHMAP h, char* bind))(WIDGET*, EVENT, char*)
 
 BIND* get_bind(BINDS_HASHMAP h, char* bind)
 {
-	
 	BIND* b = &h.binds[hash(bind) % h.size];
 	// if (b->bind == NULL) return b;
 
@@ -128,12 +129,12 @@ BIND* get_bind(BINDS_HASHMAP h, char* bind)
 		}
 		a:
 		if (strcmp(b->bind, bind)) {
-			if (b->next == NULL) return b;
+			if (b->next == NULL || b->next->bind == NULL) return NULL;
 			// if (strcmp("<mouse_move>", bind) == 0) SDL_Log("dwawda %s %s %s", b->bind, bind, b->next->bind);
 			b = b->next;
-			if (!strcmp(bind, b->bind)) {
-				return b;
-			}
+			// if (!strcmp(bind, b->bind)) {
+				// return b;
+			// }
 			goto a;
 		}
 	
@@ -141,7 +142,7 @@ BIND* get_bind(BINDS_HASHMAP h, char* bind)
 		return b;
 	}
 
-	return b;
+	return NULL;
 }
 
 
@@ -248,6 +249,8 @@ u8 check_widget_bind(WIDGET* w, EVENT e, char* bind)
 	u8(*fn)BIND_FN_PARAMS;
 	BIND* b = get_bind(w->binds, bind);
 
+	if (b == NULL) return 0;
+
 	fn = b->custom;
 	if (fn != NULL) {
 		return 1;
@@ -267,23 +270,30 @@ void execute_widget_bind(WIDGET* w, EVENT e, char* bind)
 	u8 res = 0;
 	u8(*fn)BIND_FN_PARAMS;
 	BIND* b = get_bind(w->binds, bind);
+	if (b == NULL) return;
+	// if (b == NULL) SDL_Log("widget bind custom is null");
 	// fn = get_bind_ptr(w->binds, bind_key);
 	// SDL_Log("execute widg
 	if (strcmp(bind, "<mouse_move>")) {
-		b->last_event = e;
 		SDL_Rect rect = get_widget_rect(w);
+		b->last_event = e;
 		b->x = w->win_parent->mouse_x;
 		b->y = w->win_parent->mouse_y;
 		b->rx = abs(rect.x - w->win_parent->mouse_x);
 		b->ry = abs(rect.y - w->win_parent->mouse_y);
 		// SDL_Log("execute widget bind: %s %d %d %d %d", bind, w->win_parent->mouse_x, w->win_parent->mouse_y, b->rx, b->ry);
 		// SDL_Log("rel: %d %d", b->rx, b->ry);
+		// SDL_Log("execute widget bind: %s %d", bind, hash(bind) % w->binds.size);
+		 w->win_parent->lock = w;
 	}
+
+
 	
-	SDL_Log("execute widget bind: %s %d", bind, hash(bind) % w->binds.size);
-	w->win_parent->lock = w;
+	// if (w->win_parent->mouse_x > rect.x && w->win_parent->mouse_x < rect.x+rect.w)
+		// if (w->win_parent->mouse_y > rect.y && w->win_parent->mouse_y < rect.y+rect.h)
 	fn = b->custom;
 	if (fn != NULL) {
+		// SDL_Log("widget bind custom is null");
 		focus_set(w->win_parent, w);
 		// w->win_parent->focus = w;
 		res = fn(w, e, bind);
@@ -377,7 +387,7 @@ char* win_handle_mouse_move(WIN* w, EVENT e)
 
 	
 	int o = 0, n = 0;
-	uint8_t* keys = SDL_GetKeyboardState(&n);
+	const uint8_t* keys = SDL_GetKeyboardState(&n);
 	for (int i = 0; i < n; i++) {
 		// if (keys[i] == 1) SDL_Log("key: %s %i", SDL_GetScancodeName(i), n);
 		// if (keys[i] == 1) SDL_Log("key: %c %i", SDL_GetKeyFromScancode(i), n);
@@ -421,13 +431,16 @@ char* win_handle_mouse_move(WIN* w, EVENT e)
 	if (w->attention == w->focus || w->lock == w->focus)
 	{
 		execute_widget_bind(w->focus, e, tmp);
-		return tmp;
+		// return tmp;
 	}
-	if (w->focus != w->attention && check_widget_bind(w->attention, e, tmp) && strcmp(tmp, "<mouse_move>")) {
+	if (w->focus != w->attention && strcmp(tmp, "<mouse_move>")) {
 		execute_widget_bind(w->attention, e, tmp);
-		return tmp;
+		// focus_set(w, w->attention);
+		// w->focus = w->attention;
+		// return tmp;
 	}
-	return NULL;
+	return tmp;
+	// return NULL;
 }
 
 
@@ -453,7 +466,9 @@ char* win_handle_mouse_button_down(WIN* w, EVENT e)
 			break;
 	}
 
-	execute_widget_bind(w->focus, e, tmp);
+	if (w->attention == w->focus || w->lock == w->focus)
+		execute_widget_bind(w->focus, e, tmp);
+
 	if (w->focus != w->attention) {
 		execute_widget_bind(w->attention, e, tmp);
 	}
@@ -483,7 +498,7 @@ void win_handle_mouse_button_up(WIN* w, EVENT e)
 	if (e.button.button == SDL_BUTTON_LEFT) {
 		u8(*fn)(WIDGET*, EVENT, char*) = get_bind_ptr(w->binds, "<mouse_left_release>");
 		w->last_click_release = e;
-        
+
 		SDL_Log("focus bef: %s", w->focus->name);
 		set_focus_auto(w);
 		SDL_Log("focus aft: %s", w->focus->name);
@@ -491,6 +506,7 @@ void win_handle_mouse_button_up(WIN* w, EVENT e)
 		execute_widget_bind(w->focus, e, "<mouse_left_release>");
 		// execute_widget_bind(w->attention, e, "<mouse_left_release>");
 	}
+	w->lock = NULL;
 }
 
 u8 test_mousemove(WIDGET* w, EVENT e)
@@ -558,6 +574,7 @@ u8 win_handle_keydown(WIN* w, EVENT e)
 		SDL_Log("keydown: %s", tmp);
 		// execute_widget_bind(w->focus, e, "<keypress>");
 		execute_widget_bind(w->focus, e, tmp);
+		execute_widget_bind(w->focus, e, "<keypress>");
 		// SDL_Log("handle keypress: %s", tmp);
 	}
 	// else execute_widget_bind(w->focus, e, "<keydown>");
@@ -712,10 +729,10 @@ void win_render_default(WIN* w)
 	// SDL_Log("aaa: %d %d", w->primitive_list.last->p.r.x, w->primitive_list.last->p.r.h);
 	for (PRIMITIVE_NODE* n = w->primitive_list.first; (n != NULL && n != n->next); n = n->next)
 	{
-		SDL_SetRenderDrawColor(w->renderer, 150, 150, 150, 55);
+		SDL_SetRenderDrawColor(w->renderer, n->p.color.r, n->p.color.g, n->p.color.b, 55);
 		if (n->p.type == P_RECT) {
 			SDL_RenderDrawRect(w->renderer, &n->p.r);
-			SDL_SetRenderDrawColor(w->renderer, 150, 150, 150, 22);
+			SDL_SetRenderDrawColor(w->renderer, n->p.color.r, n->p.color.g, n->p.color.b, 22);
 			SDL_RenderFillRect(w->renderer, &n->p.r);
 		}
 	}
@@ -740,8 +757,9 @@ void win_handle_window_event(WIN* w, EVENT e)
 }
 
 
-void uki_destroy_win(WIN* win)
+void uki_close(WIN* win)
 {
+	win->is_running = false;
 	SDL_DestroyRenderer(win->renderer);
 	SDL_DestroyWindow(win->win);
     
@@ -753,7 +771,7 @@ void uki_destroy_win(WIN* win)
 
 u8 win_close(WIDGET* w, EVENT e, char* bind)
 {
-	uki_destroy_win(w->win_parent);
+	uki_close(w->win_parent);
 	return 0;
 }
 

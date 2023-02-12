@@ -17,7 +17,6 @@
 #define u128 uint128_t
 
 bool debugging = true;
-bool run = true;
 TTF_Font* global_font;
 
 typedef struct COLORS COLORS;
