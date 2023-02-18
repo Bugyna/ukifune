@@ -188,6 +188,8 @@ struct WIN
 
 	int width, height;
 
+	STRING current_bind_execute;
+
 	WIDGET* children;
 	WIDGET* focus;
 	WIDGET* attention;

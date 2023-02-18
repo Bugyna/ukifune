@@ -230,9 +230,12 @@ u8 text_input_handle_keydown BIND_FN_PARAMS
 	}
 	// SDL_Log("str debug: %d %d %ld", w->text_input.text.size, w->text_input.text.index, strlen(e.text.text));
 	// strcat(w->text_input.text.str, e.text.text);
-	w->text_input.text.str[w->text_input.text.index++] = e.key.keysym.sym;
-	w->text_input.text.str[w->text_input.text.index] = '\0';
-	SDL_Log("dwa: %c", e.key.keysym.sym);
+	if (e.key.keysym.sym > 32)
+	{
+		w->text_input.text.str[w->text_input.text.index++] = e.key.keysym.sym;
+		w->text_input.text.str[w->text_input.text.index] = '\0';
+		SDL_Log("dwa: %c", e.key.keysym.sym);
+	}
 	// w->text_input.text.str = e.text.text;
 	// SDL_Log("idek: %s", w->text_input.text.str);
     

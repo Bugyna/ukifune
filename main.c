@@ -14,6 +14,8 @@ struct PLAYER
 
 WIN win;
 WORLD world;
+SDL_Color xx = {150, 150, 150};
+SDL_Rect r = {20, 20, 20, 20};
 
 u8 test_drag(WIDGET* w, EVENT e, char* bind)
 {
@@ -41,9 +43,11 @@ u8 test_drag(WIDGET* w, EVENT e, char* bind)
 		// t->rect.y = e.motion.y - c->ry;
 		// t->rect.y = w->win_parent->mouse_y + (t->rect.y - w->win_parent->mouse_y);
 	// }
+	free(b);
 
 	return 1;
 }
+
 
 u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 {
@@ -53,7 +57,7 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 		// BIND* b = get_bind(w->binds, bind);
 		// SDL_Log("1: %s", bind);
 		BIND** b = get_binds_from_key(w->binds, bind);
-		char** x = get_bind_names_from_key(bind);
+		// char** x = get_bind_names_from_key(bind);
 		// SDL_Log("2: %s", bind);
 		BIND* c = b[0];
 		if (c == NULL) return 1;
@@ -72,9 +76,24 @@ u8 test_drag_2(WIDGET* w, EVENT e, char* bind)
 		// win.primitive_list.first->next = NULL;
 		// SDL_Log("rect: %d %d %d %d", c->x, c->y, e.motion.x, e.motion.y);
 		// SDL_Log("whatefuickc [ %s ] %s\n\n", w->name, c->bind);
+		
+		
 		SDL_Rect r = {.x=c->x, .y=c->y, .w=e.motion.x-c->x, .h=e.motion.y-c->y};
-		PRIMITIVE p = {.type=P_RECT, .color=(SDL_Color){150, 150, 150}, .r=r};
+		// SDL_Rect* r = malloc(sizeof(SDL_Rect));
+		// r->x = c->x; r->y = c->y; r->w=e.motion.x-c->x; r->h = e.motion.y-c->y;
+		PRIMITIVE* p = malloc(sizeof(PRIMITIVE));
+		p->type = P_RECT;
+		p->color = xx;
+		p->r = r;
+		SDL_Log("start: %p", p);
+		// free(r);
+		// *p = (PRIMITIVE){.type=P_RECT, .color=(SDL_Color){150, 150, 150}, .r=r};
+
 		PRIMITIVE_LIST_APPEND(&w->win_parent->primitive_list, p);
+		
+
+		free(b);
+		
 		// SDL_Log("dddddd: %d %d", w->win_parent->primitive_list.last->p.r.x, w->win_parent->primitive_list.last->p.r.y);
 		// SDL_SetRenderDrawColor(w->win_parent->renderer, 255, 0, 75, 255);
 		// SDL_RenderDrawRect(w->win_parent->renderer, &r);
@@ -97,6 +116,8 @@ u8 test_drag_x(WIDGET* w, EVENT e, char* bind)
 	if (c == NULL) return 1;
 	SDL_Rect* rect = get_widget_rect_ptr(w);
 	rect->x = e.motion.x - c->rx;
+
+	free(b);
 
 	return 1;
 }
@@ -176,7 +197,9 @@ int main (int argc, char* argv[]) {
 	// win_bind(&win, "<mousemove>", test_mousemove);
 	// exit(1);
 
+	// char* bind = malloc(300);
 	char* bind;
+	// int offset = 0;
 	// BIND* x = get_bind(win.children[0].binds, "<mouse_right><mouse_move>");
 	// if (x != NULL && x->bind != NULL)
 		// SDL_Log("dwa: %s", x->bind);
@@ -185,6 +208,7 @@ int main (int argc, char* argv[]) {
 	// if (x != NULL && x->bind != NULL)
 		// SDL_Log("dwa: %s", x->bind);
 	// exit(1);
+
 	SDL_StartTextInput();
 	while (win.is_running) {
 		ticks = SDL_GetTicks();
@@ -216,7 +240,8 @@ int main (int argc, char* argv[]) {
 
 				case SDL_MOUSEMOTION:
 					PRIMITIVE_LIST_POP(&win.primitive_list);
-					win_handle_mouse_move(&win, event);
+					bind = win_handle_mouse_move(&win, event);
+					free(bind);
 					// SDL_Log("a:: %d\n", event.button.button);
 				break;
 				
@@ -242,15 +267,15 @@ int main (int argc, char* argv[]) {
 					// win_handle_keyup(&win, event);
 				// break;
 			}
-			change_widget_texture_int(&win.children[5], win.mouse_x);
-			change_widget_texture_int(&win.children[6], win.mouse_y);
-			change_widget_texture_int(&win.children[7], FPS_COUNT);
-			change_widget_texture_int(&win.children[8], DELTA_TIME);
-			change_widget_texture_text(&win.children[9], win.focus->name);
-			change_widget_texture_text(&win.children[10], win.attention->name);
-			if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
-			else change_widget_texture_text(&win.children[11], "NULL");
 		}
+		change_widget_texture_int(&win.children[5], win.mouse_x);
+		change_widget_texture_int(&win.children[6], win.mouse_y);
+		change_widget_texture_int(&win.children[7], FPS_COUNT);
+		change_widget_texture_int(&win.children[8], DELTA_TIME);
+		change_widget_texture_text(&win.children[9], win.focus->name);
+		change_widget_texture_text(&win.children[10], win.attention->name);
+		if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
+		else change_widget_texture_text(&win.children[11], "NULL");
 		win_render_default(&win);
 		cap_fps(&ticks);
 		// win.lock = NULL;

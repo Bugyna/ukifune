@@ -276,7 +276,7 @@ void execute_widget_bind(WIDGET* w, EVENT e, char* bind)
 	// SDL_Log("execute widg
 	if (strcmp(bind, "<mouse_move>")) {
 		SDL_Rect rect = get_widget_rect(w);
-		b->last_event = e;
+		// b->last_event = e;
 		b->x = w->win_parent->mouse_x;
 		b->y = w->win_parent->mouse_y;
 		b->rx = abs(rect.x - w->win_parent->mouse_x);
@@ -284,7 +284,7 @@ void execute_widget_bind(WIDGET* w, EVENT e, char* bind)
 		// SDL_Log("execute widget bind: %s %d %d %d %d", bind, w->win_parent->mouse_x, w->win_parent->mouse_y, b->rx, b->ry);
 		// SDL_Log("rel: %d %d", b->rx, b->ry);
 		// SDL_Log("execute widget bind: %s %d", bind, hash(bind) % w->binds.size);
-		 w->win_parent->lock = w;
+		w->win_parent->lock = w;
 	}
 
 
@@ -318,8 +318,11 @@ BIND** get_binds_from_key(BINDS_HASHMAP h, const char* bind)
 	for (int iter = 0; iter < 5; iter++) {
 		if (x[iter] == NULL) break;
 		ret[i++] = get_bind(h, x[iter]);
+		free(x[iter]);
 		// SDL_Log("get binds from key: %s %s", x[iter], ret[i-1]->bind);
 	}
+
+	
 	free(x);
 
 	// char* tmp = malloc(30);
@@ -449,7 +452,7 @@ char* win_handle_mouse_button_down(WIN* w, EVENT e)
 	// u8(*fn)BIND_FN_PARAMS;
 
 	// widget_localize_mouse_location(w->focus, &e);
-	char* tmp = NULL;
+	char* tmp = malloc(20);
 	SDL_Log("win mouse button down e.button.button: %d %d %d", e.button.button, SDL_BUTTON_RIGHT, e.motion.x);
 	switch (e.button.button)
 	{
@@ -729,11 +732,11 @@ void win_render_default(WIN* w)
 	// SDL_Log("aaa: %d %d", w->primitive_list.last->p.r.x, w->primitive_list.last->p.r.h);
 	for (PRIMITIVE_NODE* n = w->primitive_list.first; (n != NULL && n != n->next); n = n->next)
 	{
-		SDL_SetRenderDrawColor(w->renderer, n->p.color.r, n->p.color.g, n->p.color.b, 55);
-		if (n->p.type == P_RECT) {
-			SDL_RenderDrawRect(w->renderer, &n->p.r);
-			SDL_SetRenderDrawColor(w->renderer, n->p.color.r, n->p.color.g, n->p.color.b, 22);
-			SDL_RenderFillRect(w->renderer, &n->p.r);
+		SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 55);
+		if (n->p->type == P_RECT) {
+			SDL_RenderDrawRect(w->renderer, &n->p->r);
+			SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 22);
+			SDL_RenderFillRect(w->renderer, &n->p->r);
 		}
 	}
 	SDL_RenderPresent(w->renderer);
@@ -767,6 +770,7 @@ void uki_close(WIN* win)
 	IMG_Quit();
 	TTF_Quit();
 	SDL_Quit();
+	exit(0);
 }
 
 u8 win_close(WIDGET* w, EVENT e, char* bind)
