@@ -38,6 +38,7 @@ typedef struct
 		SDL_Point p;
 	};
 } PRIMITIVE;
+DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
 
 struct STRING
 {

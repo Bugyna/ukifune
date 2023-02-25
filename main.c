@@ -15,7 +15,6 @@ struct PLAYER
 WIN win;
 WORLD world;
 SDL_Color xx = {150, 150, 150};
-SDL_Rect r = {20, 20, 20, 20};
 
 u8 test_drag(WIDGET* w, EVENT e, char* bind)
 {
@@ -143,7 +142,7 @@ int main (int argc, char* argv[]) {
 	// win.render_fn = win_render_default;
 	// SDL_Log("aaaaaa: %d", world.render_list[0]->components[0].type);
 	
-	SDL_Event event;
+	// SDL_Event event;
 	bool moving = false;
 	// parse_bind_key("<mouse_right><mouse_move>");
 
@@ -216,58 +215,10 @@ int main (int argc, char* argv[]) {
 		win.children[5].label.tex.rect.x+=1*DELTA_TIME;
 		if (win.children[5].label.tex.rect.x > 1200) win.children[5].label.tex.rect.x = 0;
 		// change_widget_texture_text(&win.children[5], "dwa");
-		while (SDL_PollEvent(&event)) {
-			// PRIMITIVE_LIST_POP(&win.primitive_list);
-			// SDL_Log("event: %d", event.type);
-			switch (event.type) {
-				case SDL_QUIT:
-					win.is_running = false;
-				break;
+		
+		win_event_handle(&win);
 
-				case SDL_WINDOWEVENT:
-					win_handle_window_event(&win, event);
-				break;
-
-				case SDL_MOUSEBUTTONDOWN:
-					// SDL_Log("a:: %d\n", event.button.button);
-					win_handle_mouse_button_down(&win, event);
-				break;
-
-				case SDL_MOUSEBUTTONUP:
-					// SDL_Log("a:: %d\n", event.button.button);
-					win_handle_mouse_button_up(&win, event);
-				break;
-
-				case SDL_MOUSEMOTION:
-					PRIMITIVE_LIST_POP(&win.primitive_list);
-					bind = win_handle_mouse_move(&win, event);
-					free(bind);
-					// SDL_Log("a:: %d\n", event.button.button);
-				break;
-				
-				case SDL_KEYDOWN:
-					// if (win.focus == &win.children[3]) win.focus = &win.children[0];
-					// else win.focus = &win.children[3];
-					
-					win_handle_keydown(&win, event);
-					// SDL_Log("a:: %d\n", event.key.keysym.sym);
-				break;
-				
-				// case SDL_TEXTINPUT:
-					// win_handle_keydown(&win, event);
-					// // SDL_Log("textinput: %s %ld", event.text.text, strlen(event.text.text));
-				// break;
-				
-				// case SDL_TEXTEDITING:
-					// // SDL_Log("textedit: %s %d %d", event.edit.text, event.edit.start, event.edit.length);
-					// win_handle_keydown(&win, event);
-				// break;
-				
-				// case SDL_KEYUP:
-					// win_handle_keyup(&win, event);
-				// break;
-			}
-		}
+		
 		change_widget_texture_int(&win.children[5], win.mouse_x);
 		change_widget_texture_int(&win.children[6], win.mouse_y);
 		change_widget_texture_int(&win.children[7], FPS_COUNT);

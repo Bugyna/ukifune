@@ -4,6 +4,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "widgets.h"
+#include "entity.c"
 
 #define FPS 60
 #define WHITE (SDL_Color){255, 255, 255}
@@ -54,6 +55,9 @@ void win_init(WIN* w)
 
 	SDL_GetWindowSize(w->win, &w->width, &w->height);
 
+	global_font = TTF_OpenFont("Ac437_9x8.ttf", 18);
+	w->style.font = global_font;
+
 	w->is_running = true;
 	
 	w->binds.size = 20;
@@ -67,10 +71,9 @@ void win_init(WIN* w)
 	w->widget_render_list = calloc(20, sizeof(WIDGET*));
 
 	PRIMITIVE_LIST_INIT(&w->primitive_list);
+	// ENTITY_LIST_INIT(&w->render_list);
+	ENTITY_LIST_INIT_VAL(&w->render_list, entity_create_from_texture(-1, -1, create_texture_from_text(w, -1, -1, " ", COLOR_WHITE)));
 	// w->children = calloc(6, sizeof(WIDGET)); // this throws floating point exception somehow lmao
-   
-	global_font = TTF_OpenFont("Ac437_9x8.ttf", 18);
-	w->style.font = global_font;
 	
 	WIDGET widget = create_label(w, 1280, 720, "WIN");
 	widget.type = W_WIN;
@@ -266,11 +269,12 @@ u8 check_widget_bind(WIDGET* w, EVENT e, char* bind)
 
 void execute_widget_bind(WIDGET* w, EVENT e, char* bind)
 {
-	// SDL_Log("execute widget bind %s\n", bind);
+	SDL_Log("execute widget bind %s\n", bind);
 	u8 res = 0;
 	u8(*fn)BIND_FN_PARAMS;
 	BIND* b = get_bind(w->binds, bind);
 	if (b == NULL) return;
+	SDL_Log("here");
 	// if (b == NULL) SDL_Log("widget bind custom is null");
 	// fn = get_bind_ptr(w->binds, bind_key);
 	// SDL_Log("execute widg
@@ -708,40 +712,6 @@ void win_add_child(WIN* w, WIDGET widget)
 	// SDL_RenderPresent(win->renderer);
 // }
 
-void win_render_default(WIN* w)
-{
-	SDL_SetRenderDrawColor(w->renderer, 0, 0, 0, 255);
-	SDL_RenderClear(w->renderer);
-	SDL_SetRenderDrawColor(w->renderer, 255, 0, 75, 255);
-
-	for (int i = 1; i < w->child_index; i++) {
-		if (debugging)
-			SDL_RenderDrawRect(w->renderer, get_widget_rect_ptr(&w->children[i]));
-        
-        
-		if (w->children[i].render_fn != NULL)
-			w->children[i].render_fn(&w->children[i]);
-        
-		else {
-			TEXTURE* tex = get_widget_texture_ptr(&w->children[i]);
-			if (tex == NULL) { SDL_Log("oh no a null fuckery"); continue; }
-			SDL_RenderCopyEx(w->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
-		}
-	}
-
-	// SDL_Log("aaa: %d %d", w->primitive_list.last->p.r.x, w->primitive_list.last->p.r.h);
-	for (PRIMITIVE_NODE* n = w->primitive_list.first; (n != NULL && n != n->next); n = n->next)
-	{
-		SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 55);
-		if (n->p->type == P_RECT) {
-			SDL_RenderDrawRect(w->renderer, &n->p->r);
-			SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 22);
-			SDL_RenderFillRect(w->renderer, &n->p->r);
-		}
-	}
-	SDL_RenderPresent(w->renderer);
-}
-
 
 void win_handle_resize(WIN* w, EVENT e)
 {
@@ -757,6 +727,109 @@ void win_handle_window_event(WIN* w, EVENT e)
 			win_handle_resize(w, e);
 		break;
 	}
+}
+
+
+void win_event_handle(WIN* win)
+{
+	char* bind = malloc(120);
+	while (SDL_PollEvent(&win->event)) {
+		// PRIMITIVE_LIST_POP(&win.primitive_list);
+		// SDL_Log("event: %d", event.type);
+		switch (win->event.type) {
+			case SDL_QUIT:
+				win->is_running = false;
+			break;
+
+			case SDL_WINDOWEVENT:
+				win_handle_window_event(win, win->event);
+			break;
+
+			case SDL_MOUSEBUTTONDOWN:
+				// SDL_Log("a:: %d\n", event.button.button);
+				win_handle_mouse_button_down(win, win->event);
+			break;
+
+			case SDL_MOUSEBUTTONUP:
+				// SDL_Log("a:: %d\n", event.button.button);
+				win_handle_mouse_button_up(win, win->event);
+			break;
+
+			case SDL_MOUSEMOTION:
+				PRIMITIVE_LIST_POP(&win->primitive_list);
+				bind = win_handle_mouse_move(win, win->event);
+				free(bind);
+				// SDL_Log("a:: %d\n", event.button.button);
+			break;
+			
+			case SDL_KEYDOWN:
+				// if (win.focus == &win.children[3]) win.focus = &win.children[0];
+				// else win.focus = &win.children[3];
+				
+				win_handle_keydown(win, win->event);
+				// SDL_Log("a:: %d\n", event.key.keysym.sym);
+			break;
+			
+			// case SDL_TEXTINPUT:
+				// win_handle_keydown(&win, event);
+				// // SDL_Log("textinput: %s %ld", event.text.text, strlen(event.text.text));
+			// break;
+			
+			// case SDL_TEXTEDITING:
+				// // SDL_Log("textedit: %s %d %d", event.edit.text, event.edit.start, event.edit.length);
+				// win_handle_keydown(&win, event);
+			// break;
+			
+			// case SDL_KEYUP:
+				// win_handle_keyup(&win, event);
+			// break;
+		}
+	}
+}
+
+void win_render_default(WIN* w)
+{
+	SDL_SetRenderDrawColor(w->renderer, 0, 0, 0, 255);
+	SDL_RenderClear(w->renderer);
+	SDL_SetRenderDrawColor(w->renderer, 255, 0, 75, 255);
+
+	for (int i = 1; i < w->child_index; i++) {
+		// #if DEBUGGING == 1
+			// SDL_RenderDrawRect(w->renderer, get_widget_rect_ptr(&w->children[i]));
+		// #endif
+        
+        
+		if (w->children[i].render_fn != NULL)
+			w->children[i].render_fn(&w->children[i]);
+        
+		else {
+			TEXTURE* tex = get_widget_texture_ptr(&w->children[i]);
+			if (tex == NULL) { SDL_Log("oh no a null fuckery"); continue; }
+			SDL_RenderCopyEx(w->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
+		}
+	}
+
+
+	for (ENTITY_NODE* n = w->render_list.first; (n != NULL && n != n->next); n = n->next)
+	{
+		SDL_Log("dwadw: %s %d %d", n->e->name, n->e->x, n->e->y);
+		#if DEBUGGING == 1
+			SDL_RenderDrawRect(w->renderer, &n->e->tex.rect);
+		#endif
+		render_entity(w, n->e);
+	}
+
+	// SDL_Log("aaa: %d %d", w->primitive_list.last->p.r.x, w->primitive_list.last->p.r.h);
+	for (PRIMITIVE_NODE* n = w->primitive_list.first; (n != NULL && n != n->next); n = n->next)
+	{
+		SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 55);
+		if (n->p->type == P_RECT) {
+			SDL_RenderDrawRect(w->renderer, &n->p->r);
+			SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 22);
+			SDL_RenderFillRect(w->renderer, &n->p->r);
+		}
+	}
+	SDL_RenderPresent(w->renderer);
 }
 
 

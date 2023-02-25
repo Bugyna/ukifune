@@ -2,7 +2,6 @@
 #include "components.h"
 #include "widgets.h"
 
-
 void change_texture_to_int(WIN* win, TEXTURE* t, int num, SDL_Color color)
 {
 	char* text = malloc(20);
@@ -43,6 +42,7 @@ TEXTURE create_texture_from_text(WIN* win, int x, int y, const char* text, SDL_C
 {
 	TEXTURE tex;
 	tex.surf = TTF_RenderUTF8_Blended(global_font, text, color);
+	UKI_ASSERT(tex.surf, "something went wrong when creating texture from text: '%s'", text);
 	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
 	tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};
 
@@ -55,6 +55,7 @@ TEXTURE create_texture_from_image(WIN* win, int x, int y, int w, int h, const ch
 	// SDL_Surface* tmp = IMG_Load(path);
 	// SDL_BlitSurface(tmp, NULL, tex.surf, &tex.rect);
 	tex.surf = IMG_Load(path);
+	UKI_ASSERT(tex.surf, "something went wrong when loading image from path: %s", path);
 	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
 	if (w == -1 || h == -1)
 		tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};

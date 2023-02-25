@@ -45,4 +45,10 @@ void NAME##_LIST_INIT(NAME##_LIST* l)\
 	l->first = tmp;\
 	l->last = tmp;\
 }\
+void NAME##_LIST_INIT_VAL(NAME##_LIST* l, VAL_TYPE val)\
+{\
+	NAME##_LIST_INIT(l);\
+	l->first->VAL_NAME = malloc(sizeof(VAL_TYPE));\
+	*l->first->VAL_NAME = val;\
+}\
 

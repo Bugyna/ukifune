@@ -20,7 +20,6 @@ struct WORLD
 	MAP* maps;
 	int map_size, map_index, cur_map;
 	int state;
-	
 };
 
 
@@ -36,15 +35,4 @@ void world_init(WORLD* w)
 		map_init(&w->maps[i]);
 	}
 }
-
-// void world_add_entity(WORLD* w, ENTITY e)
-// {
-	// w->entities[w->entity_index++] = e;
-// }
-
-// void world_add_renderable_entity(WORLD* w, ENTITY e)
-// {
-	// world_add_entity(w, e);
-	// w->render_list[w->render_list_index++] = &w->entities[w->entity_index-1];
-// }
 

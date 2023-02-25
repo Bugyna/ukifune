@@ -8,4 +8,4 @@
 #include "util.h"
 #include "widgets.c"
 #include "win.c"
-#include "world.h"
+#include "world.c"

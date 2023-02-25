@@ -175,14 +175,12 @@ struct WIDGET
 
 };
 
-DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
-
 struct WIN
 {
 	SDL_Window* win;
 	SDL_Renderer* renderer;
 
-	SDL_Event* event;
+	// SDL_Event* event;
 
 	bool is_running;
 
@@ -196,7 +194,8 @@ struct WIN
 	WIDGET* lock;
 
 	WIDGET** widget_render_list;
-	ENTITY** render_queue;
+	// ENTITY** render_list;
+	ENTITY_LIST render_list;
 	PRIMITIVE_LIST primitive_list;
 
 	STYLE style;
@@ -204,6 +203,8 @@ struct WIN
 	BINDS_HASHMAP binds;
 
 	int child_index, render_index;
+
+	SDL_Event event;
 	
 	int mouse_x, mouse_y;
 	EVENT last_click;

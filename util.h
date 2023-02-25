@@ -1,4 +1,5 @@
 #pragma once
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
 #include "hashmap.h"
@@ -15,6 +16,15 @@
 #define u32 uint32_t
 #define u64 uint64_t
 #define u128 uint128_t
+
+
+
+#define DEBUGGING 1
+
+#define UKI_ASSERT(cond, text, ...) if (!cond) {SDL_Log(text, __VA_ARGS__); exit(1);}
+
+SDL_Color COLOR_WHITE = (SDL_Color){255, 255, 255};
+
 
 bool debugging = true;
 TTF_Font* global_font;

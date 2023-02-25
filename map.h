@@ -10,7 +10,8 @@ typedef struct
 	int entity_index, render_list_index;
 	int entity_size, render_list_size;
 
-	ENTITY* entities;
+	
+	ENTITY* entity_list;
 	ENTITY** render_list;
 } MAP;
 
@@ -23,7 +24,7 @@ void map_init(MAP* map)
 
 	map->entity_index = 0;
 	map->entity_size = 20;
-	map->entities = malloc(map->entity_size*sizeof(ENTITY));
+	map->entity_list = malloc(map->entity_size*sizeof(ENTITY));
 
 	map->tile_index = 0;
 	map->tile_size = 100;
@@ -32,13 +33,13 @@ void map_init(MAP* map)
 
 void map_add_entity(MAP* map, ENTITY e)
 {
-	map->entities[map->entity_index++] = e;
+	map->entity_list[map->entity_index++] = e;
 }
 
 void map_add_renderable_entity(MAP* map, ENTITY e)
 {
 	map_add_entity(map, e);
-	map->render_list[map->render_list_index++] = &map->entities[map->entity_index-1];
+	map->render_list[map->render_list_index++] = &map->entity_list[map->entity_index-1];
 }
 
 

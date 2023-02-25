@@ -47,13 +47,15 @@ typedef struct
 struct ENTITY
 {
 	char* name;
-	VEC3 world_pos;
+	int x, y;
 	SDL_Rect view;
 	// SDL_Rect pos, abs_pos;
 	SDL_Rect* colliders;
 	int collider_index, collider_size;
 	TEXTURE tex;
 };
+
+DEFINE_LINKED_LIST(ENTITY, ENTITY, e)
 
 // DEF_GET_COMPONENT_ATTR_PTR_FN(TEXTURE*, get_component_texture_ptr, tex)
 
@@ -65,10 +67,12 @@ struct ENTITY
 // }
 
 
-ENTITY entity_create_from_texture(VEC3 pos, TEXTURE tex)
+ENTITY entity_create_from_texture(int x, int y, TEXTURE tex)
 {
 	ENTITY e;
-	e.world_pos = pos;
+	e.name = "dwa";
+	e.x = x;
+	e.y = y;
 	e.collider_index = 0;
 	e.collider_size = 5;
 	e.colliders = malloc(e.collider_size*sizeof(SDL_Rect));
