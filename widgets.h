@@ -2,7 +2,7 @@
 // #include "components.c"
 
 // #include "core.h"
-#include <SDL2/SDL_video.h>
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -75,16 +75,17 @@ typedef struct TEXT_INPUT TEXT_INPUT;
 typedef struct WIDGET WIDGET;
 
 
-
-#define BIND_FN_PARAMS (WIDGET* w, EVENT e, char* bind)
-#define WIN_BIND_FN_PARAMS (WIN* w, EVENT e, char* bind)
-
 void alloc_win_hashmap(BINDS_HASHMAP* h);
 
+#define BIND_FN_PARAMS (WIDGET* w, EVENT e, BIND* bind)
+#define WIN_BIND_FN_PARAMS (WIN* w, EVENT e, BIND* bind)
 
 struct BIND
 {
 	char* bind;
+	char** bind_parts;
+	BIND** bind_t_parts;
+	
 	u8(*system)BIND_FN_PARAMS;
 	u8(*custom)BIND_FN_PARAMS;
 
@@ -94,6 +95,7 @@ struct BIND
 
 	BIND* next;
 };
+
 
 // DEFINE_HASHMAP(BINDS, bind, BIND, bind)
 
@@ -205,6 +207,8 @@ struct WIN
 	int child_index, render_index;
 
 	SDL_Event event;
+	// SDL_Keycode keys_held[32];
+	KEYCODE_LIST keys_held;
 	
 	int mouse_x, mouse_y;
 	EVENT last_click;

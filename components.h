@@ -40,6 +40,9 @@ typedef struct
 } PRIMITIVE;
 DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
 
+
+DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode, key)
+
 struct STRING
 {
 	char* str;

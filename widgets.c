@@ -65,6 +65,36 @@ char** get_bind_names_from_key(const char* bind)
 	return ret;
 }
 
+
+BIND* get_bind(BINDS_HASHMAP h, char* bind)
+{
+	BIND* b = &h.binds[hash(bind) % h.size];
+	// if (b->bind == NULL) return b;
+
+	// SDL_Log("getbind: %s", b->bind);
+	if (b != NULL && b->bind != NULL)
+	{
+		if (!strcmp(bind, b->bind)) {
+			return b;
+		}
+		a:
+		if (strcmp(b->bind, bind)) {
+			if (b->next == NULL || b->next->bind == NULL) return NULL;
+			// if (strcmp("<mouse_move>", bind) == 0) SDL_Log("dwawda %s %s %s", b->bind, bind, b->next->bind);
+			b = b->next;
+			// if (!strcmp(bind, b->bind)) {
+				// return b;
+			// }
+			goto a;
+		}
+	
+		// SDL_Log("dwawda ret %s %s", b->bind, bind);
+		return b;
+	}
+
+	return NULL;
+}
+
 void widget_bind_system(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
 {
 	w->binds.binds[hash(bind) % w->binds.size].bind = bind;
@@ -75,24 +105,32 @@ void widget_bind_system(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
 void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 {
 	int h = hash(bind) % w->binds.size;
-	BIND* b = &w->binds.binds[h];
-	for ( ; b->bind != NULL ; ){
-		b = b->next;
+	BIND* b;
+	BIND* orig = &w->binds.binds[h];
+	for ( ; orig->bind != NULL ; ){
+		orig = orig->next;
 	}
 
 	// b->bind = bind;
-	b->bind = malloc(strlen(bind)+1);
-	strcpy(b->bind, bind);
-	b->custom = fn;
-	if (b->next == NULL) {
-		b->next = calloc(1, sizeof(BIND));
-		b->next->bind = NULL;
+	orig->bind = malloc(strlen(bind)+1);
+	orig->bind_t_parts = malloc(5 * sizeof(BIND*));
+	for (int i = 0; i < 5; i++) {
+		orig->bind_t_parts[i] = malloc(sizeof(BIND));
+		
+	}
+	
+	strcpy(orig->bind, bind);
+	orig->custom = fn;
+	if (orig->next == NULL) {
+		orig->next = calloc(1, sizeof(BIND));
+		orig->next->bind = NULL;
 	}
 
 	// SDL_Log("hash: %d", h);
 
 	// SDL_Log("\n\n0: %s", bind);
-	char** individual = get_bind_names_from_key(bind);
+	orig->bind_parts = get_bind_names_from_key(bind);
+	char** individual = orig->bind_parts;
 	for (int i = 0; i < 5; i++)
 	{
 		if (individual[i] == NULL) break;
@@ -100,6 +138,7 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 		// SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
 		// w->binds.binds[hash(individual[i]) % w->binds.size].bind = individual[i];
 		b = &w->binds.binds[hash(individual[i]) % w->binds.size];
+		orig->bind_t_parts[i] = b;
 		a:
 		if (b->bind != NULL && strcmp(b->bind, individual[i])) {
 			// SDL_Log("dwad: [ %s ] %s %s %s", w->name, bind, b->bind, individual[i]);
@@ -108,6 +147,7 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 				b->next = calloc(1, sizeof(BIND));
 				b->next->bind = NULL;
 			}
+			// b->bind_t_parts[i] = b;
 			b = b->next;
 			// if (b->bind != NULL) SDL_Log("next: %s", b->bind);
 			goto a;
@@ -121,13 +161,9 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 			b->bind = malloc(strlen(individual[i])+1);
 			strcpy(b->bind, individual[i]);
 		}
-		// b->bind = individual[i];
-		// SDL_Log("get bind name from key: %s", b->bind);
 	}
-
-	free(individual);
-	// SDL_Log("5");
 }
+
 
 char* widget_type_name(WIDGET w)
 {
