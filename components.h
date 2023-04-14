@@ -4,6 +4,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "util.h"
+#include "circle.h"
 
 #define WHITE (SDL_Color){255, 255, 255}
 TTF_Font* font;
@@ -20,6 +21,7 @@ typedef enum
 {
 	P_RECT=1,
 	P_POINT,
+	P_CIRCLE,
 } PRIMITIVE_TYPE;
 
 typedef struct COMPONENT COMPONENT;
@@ -36,12 +38,12 @@ typedef struct
 	{
 		SDL_Rect r;
 		SDL_Point p;
+		UKI_CIRCLE c;
+		
 	};
 } PRIMITIVE;
 DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
 
-
-DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode, key)
 
 struct STRING
 {

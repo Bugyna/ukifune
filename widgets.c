@@ -28,6 +28,7 @@ char** get_bind_names_from_key(const char* bind)
 	char* tmp = malloc(30);
 	
 	int len = strlen(bind), size = 0, offset = 0, i = 0;
+
 	bool in_special = false;
 	// SDL_Log("len: %d", len);
 	for ( ; offset < len; offset++)
@@ -54,12 +55,13 @@ char** get_bind_names_from_key(const char* bind)
 
 		else {
 			// SDL_Log("dwaere %c %d", bind[offset], offset);
-			ret[i] = malloc(3);
+			ret[i] = malloc(2);
 			tmp[0] = bind[offset];
 			tmp[1] = '\0';
 			strcpy(ret[i++], tmp);
 		}
 	}
+
 
 	free(tmp);
 	return ret;
@@ -79,6 +81,7 @@ BIND* get_bind(BINDS_HASHMAP h, char* bind)
 		}
 		a:
 		if (strcmp(b->bind, bind)) {
+			// SDL_Log("dwawda ret %s %s", b->bind, bind);
 			if (b->next == NULL || b->next->bind == NULL) return NULL;
 			// if (strcmp("<mouse_move>", bind) == 0) SDL_Log("dwawda %s %s %s", b->bind, bind, b->next->bind);
 			b = b->next;
@@ -95,24 +98,30 @@ BIND* get_bind(BINDS_HASHMAP h, char* bind)
 	return NULL;
 }
 
-void widget_bind_system(WIDGET* w, char* bind, u8(*fn)BIND_FN_PARAMS)
-{
-	w->binds.binds[hash(bind) % w->binds.size].bind = bind;
-	w->binds.binds[hash(bind) % w->binds.size].system = fn;
-	SDL_Log("hash: %d", hash(bind) % w->binds.size);
-}
 
-void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
+void widget_bind_(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS, bool system)
 {
 	int h = hash(bind) % w->binds.size;
 	BIND* b;
 	BIND* orig = &w->binds.binds[h];
-	for ( ; orig->bind != NULL ; ){
-		orig = orig->next;
-	}
 
-	// b->bind = bind;
-	orig->bind = malloc(strlen(bind)+1);
+
+	// why was this here and why did cause a segfault when binding 'a' after 'z<mouse_move>'
+	for (;;)
+	{
+		if (orig->bind != NULL && strcmp(orig->bind, bind) && orig->next != NULL) {
+			// SDL_Log("orig: %s", orig->bind);
+			orig = orig->next;
+		}
+		else
+			break;
+	}
+	// for ( ; orig->bind != NULL ; ){
+		// orig = orig->next;
+	// }
+
+	int bind_len = strlen(bind);
+	orig->bind = malloc(bind_len+1);
 	orig->bind_t_parts = malloc(5 * sizeof(BIND*));
 	for (int i = 0; i < 5; i++) {
 		orig->bind_t_parts[i] = malloc(sizeof(BIND));
@@ -120,25 +129,24 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 	}
 	
 	strcpy(orig->bind, bind);
-	orig->custom = fn;
+	if (system) orig->system = fn;
+	else orig->custom = fn;
+
 	if (orig->next == NULL) {
 		orig->next = calloc(1, sizeof(BIND));
 		orig->next->bind = NULL;
 	}
 
-	// SDL_Log("hash: %d", h);
-
-	// SDL_Log("\n\n0: %s", bind);
 	orig->bind_parts = get_bind_names_from_key(bind);
 	char** individual = orig->bind_parts;
+
 	for (int i = 0; i < 5; i++)
 	{
-		if (individual[i] == NULL) break;
-		// SDL_Log("1: %s", individual[i]);
-		// SDL_Log("tmp hash: %d", hash(individual[i]) % w->binds.size);
-		// w->binds.binds[hash(individual[i]) % w->binds.size].bind = individual[i];
+		if (individual[i] == NULL) return;
+
 		b = &w->binds.binds[hash(individual[i]) % w->binds.size];
 		orig->bind_t_parts[i] = b;
+
 		a:
 		if (b->bind != NULL && strcmp(b->bind, individual[i])) {
 			// SDL_Log("dwad: [ %s ] %s %s %s", w->name, bind, b->bind, individual[i]);
@@ -164,6 +172,16 @@ void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 	}
 }
 
+void widget_bind_system(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
+{
+	widget_bind_(w, bind, fn, 1);
+}
+
+void widget_bind(WIDGET* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
+{
+	widget_bind_(w, bind, fn, 0);
+}
+
 
 char* widget_type_name(WIDGET w)
 {
@@ -183,6 +201,24 @@ char* widget_type_name(WIDGET w)
 }
 
 
+void w_focus_set(WIDGET* w)
+{
+	w->win_parent->focus = w;
+}
+
+
+u8 focus_self BIND_FN_PARAMS
+{
+	w->win_parent->focus = w;
+	return 0;
+}
+
+WIDGET* w_focus_get(WIDGET* w)
+{
+	return w->win_parent->focus;
+}
+
+
 char* generate_widget_name(WIN* w, WIDGET* widget)
 {
 	char* name = malloc(32);
@@ -194,6 +230,12 @@ char* generate_widget_name(WIN* w, WIDGET* widget)
 	return name;
 }
 
+void add_default_binds(WIDGET* w)
+{
+	widget_bind_system(w, "<mouse_left>", focus_self);
+	widget_bind_system(w, "<mouse_right>", focus_self);
+	widget_bind_system(w, "<mouse_middle>", focus_self);
+}
 
 void widget_init(WIN* w, WIDGET* widget, int type)
 {
@@ -212,6 +254,8 @@ void widget_init(WIN* w, WIDGET* widget, int type)
 	widget->child_index = 0;
 	widget->children = calloc(5, sizeof(WIDGET));
 	widget->render_fn = NULL;
+
+	add_default_binds(widget);
 }
 
 void widget_localize_mouse_location(WIDGET* w, EVENT* e)
@@ -241,7 +285,6 @@ WIDGET create_label(WIN* w, int x, int y, const char* text)
 	widget.label = l;
 	return widget;
 }
-
 
 
 u8 text_input_handle_keydown BIND_FN_PARAMS

@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
+#include "error.h"
 #include "hashmap.h"
 #include "linked_list.h"
 
@@ -19,9 +20,9 @@
 
 
 
+
 #define DEBUGGING 1
 
-#define UKI_ASSERT(cond, text, ...) if (!cond) {SDL_Log(text, __VA_ARGS__); exit(1);}
 
 SDL_Color COLOR_WHITE = (SDL_Color){255, 255, 255};
 

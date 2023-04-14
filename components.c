@@ -15,8 +15,9 @@ void change_texture_to_int(WIN* win, TEXTURE* t, int num, SDL_Color color)
 	t->rect = (SDL_Rect){t->rect.x, t->rect.y, t->surf->w, t->surf->h};
 }
 
-void change_texture_to_text(WIN* win, TEXTURE* t, char* text, SDL_Color color)
+void change_texture_to_text(WIN* win, TEXTURE* t, const char* text, SDL_Color color)
 {
+	if (text == NULL) text = "!!NULL";
 	SDL_FreeSurface(t->surf);
 	t->surf = TTF_RenderUTF8_Blended(global_font, text, color);
 	SDL_DestroyTexture(t->tex);
@@ -71,6 +72,31 @@ void render_texture(WIN* win, TEXTURE* tex)
 	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
 }
 
+
+void render_primitive_list(WIN* w, PRIMITIVE_LIST primitive_list)
+{
+	ITERATE_LIST(PRIMITIVE, primitive_list, n, p)
+	// for (PRIMITIVE_NODE* n = primitive_list.first; (n != NULL && n != n->next); n = n->next)
+	{
+		SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 55);
+		switch (n->p->type)
+		{
+			case P_RECT:
+				SDL_RenderDrawRect(w->renderer, &n->p->r);
+				SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 22);
+				SDL_RenderFillRect(w->renderer, &n->p->r);
+			break;
+			case P_POINT:
+				SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 22);
+				SDL_RenderDrawPoint(w->renderer, n->p->p.x, n->p->p.y);
+			break;
+			case P_CIRCLE:
+				SDL_SetRenderDrawColor(w->renderer, n->p->color.r, n->p->color.g, n->p->color.b, 255);
+				uki_draw_circle(w->renderer, n->p->c);
+			break;
+		}
+	}
+}
 
 // void update_texture_from_text(SDL_Renderer* renderer, int x, int y, char* text, SDL_Color color)
 // {

@@ -1,4 +1,12 @@
 #pragma once
+#include "error.h"
+
+
+#define ITERATE_LIST_PTR(L_TYPE, L_NAME, NAME, VAL_NAME)\
+for (L_TYPE##_NODE* NAME = L_NAME->first; NAME != NULL && NAME->VAL_NAME != NULL; NAME = NAME->next)
+
+#define ITERATE_LIST(L_TYPE, L_NAME, NAME, VAL_NAME)\
+for (L_TYPE##_NODE* NAME = L_NAME.first; NAME != NULL && NAME->VAL_NAME != NULL; NAME = NAME->next)
 
 #define DEFINE_LINKED_LIST(NAME, VAL_TYPE, VAL_NAME)\
 typedef struct NAME##_NODE NAME##_NODE;\
@@ -15,10 +23,28 @@ struct NAME##_LIST\
 	NAME##_NODE* first;\
 	NAME##_NODE* last;\
 };\
+void NAME##_LIST_APPEND_VAL(NAME##_LIST* l, VAL_TYPE val)\
+{\
+	if (l->last->VAL_NAME == NULL) {\
+		l->last->VAL_NAME = malloc(sizeof(VAL_TYPE));\
+		*l->last->VAL_NAME = val;\
+		l->last->next = NULL;\
+		return;\
+	}\
+	NAME##_NODE* tmp = malloc(sizeof(NAME##_NODE));\
+	tmp->VAL_NAME = malloc(sizeof(VAL_TYPE));\
+	*tmp->VAL_NAME = val;\
+	tmp->prev = l->last;\
+	tmp->next = NULL;\
+	l->last->next = tmp;\
+	l->last = tmp;\
+	l->length++;\
+}\
 void NAME##_LIST_APPEND(NAME##_LIST* l, VAL_TYPE* val)\
 {\
 	if (l->last->VAL_NAME == NULL) {\
 		l->last->VAL_NAME = val;\
+		l->last->next = NULL;\
 		return;\
 	}\
 	NAME##_NODE* tmp = malloc(sizeof(NAME##_NODE));\
@@ -29,32 +55,47 @@ void NAME##_LIST_APPEND(NAME##_LIST* l, VAL_TYPE* val)\
 	l->last = tmp;\
 	l->length++;\
 }\
-void NAME##_LIST_POP(NAME##_LIST* l)\
+NAME##_NODE* NAME##_LIST_GET_AT_INDEX(NAME##_LIST* l, int i)\
 {\
-	if (l->length < 2) return;\
-	free(l->last->VAL_NAME);\
-	NAME##_NODE* tmp = l->last->prev;\
-	free(l->last);\
-	tmp->next = NULL;\
-	l->last = tmp;\
+	int j = 0;\
+	ITERATE_LIST_PTR(NAME, l, n, VAL_NAME)\
+	{\
+		if (j == i)\
+			return n;\
+		j++;\
+	}\
+	return NULL;\
+}\
+void NAME##_LIST_POP_AT_PTR(NAME##_LIST* l, NAME##_NODE* n)\
+{\
+	if (l->length <= 0) return;\
+	free(n->VAL_NAME);\
+	if (n == l->first && n == l->last) {\
+		n->VAL_NAME = NULL;\
+		return;\
+	}\
+	if (n == l->first) l->first = n->next;\
+	if (n == l->last) l->last = n->prev;\
+	if (n->prev != NULL) n->prev->next = n->next;\
+	if (n->next != NULL) n->next->prev = n->prev;\
+	free(n);\
 	l->length--;\
 }\
-void NAME##_LIST_POP_INDEX(NAME##_LIST* l, int i)\
+void NAME##_LIST_POP(NAME##_LIST* l)\
+{\
+	NAME##_LIST_POP_AT_PTR(l, l->last);\
+}\
+void NAME##_LIST_POP_AT_INDEX(NAME##_LIST* l, int i)\
 {\
 	if (l->length < 2) return;\
 	if (i > l->length) return;\
-	NAME##_NODE* tmp = l->first+i*sizeof(NAME##_NODE);\
-	free(tmp->VAL_NAME);\
-	tmp->prev->next = tmp->next;\
-	tmp->next->prev = tmp->prev;\
-	free(tmp);\
-	l->length--;\
+	NAME##_LIST_POP_AT_PTR(l, NAME##_LIST_GET_AT_INDEX(l, i));\
 }\
 void NAME##_LIST_INIT(NAME##_LIST* l)\
 {\
 	NAME##_NODE* tmp = malloc(sizeof(NAME##_NODE));\
-	tmp->prev = tmp;\
-	tmp->next = tmp;\
+	tmp->prev = NULL;\
+	tmp->next = NULL;\
 	tmp->VAL_NAME = NULL;\
 	l->length = 1;\
 	l->first = tmp;\
@@ -63,7 +104,6 @@ void NAME##_LIST_INIT(NAME##_LIST* l)\
 void NAME##_LIST_INIT_VAL(NAME##_LIST* l, VAL_TYPE val)\
 {\
 	NAME##_LIST_INIT(l);\
-	l->first->VAL_NAME = malloc(sizeof(VAL_TYPE));\
-	*l->first->VAL_NAME = val;\
+	NAME##_LIST_APPEND_VAL(l, val);\
 }\
 

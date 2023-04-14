@@ -13,9 +13,11 @@ struct PLAYER
 	ENTITY e;
 };
 
+
 WIN win;
 WORLD world;
 SDL_Color xx = {150, 150, 150};
+SDL_Color selected = {255, 100, 100};
 
 
 // u8 test_drag(WIDGET* w, EVENT e, char* bind)
@@ -86,15 +88,17 @@ u8 test_drag_2 BIND_FN_PARAMS
 	SDL_Rect r = {.x=c->x, .y=c->y, .w=e.motion.x-c->x, .h=e.motion.y-c->y};
 	// SDL_Rect* r = malloc(sizeof(SDL_Rect));
 	// r->x = c->x; r->y = c->y; r->w=e.motion.x-c->x; r->h = e.motion.y-c->y;
-	PRIMITIVE* p = malloc(sizeof(PRIMITIVE));
-	p->type = P_RECT;
-	p->color = xx;
-	p->r = r;
+	PRIMITIVE p = 
+	{
+		.type = P_RECT,
+		.color = xx,
+		.r = r
+	};
 	// SDL_Log("start: %p", p);
 	// free(r);
 	// *p = (PRIMITIVE){.type=P_RECT, .color=(SDL_Color){150, 150, 150}, .r=r};
 	
-	PRIMITIVE_LIST_APPEND(&w->win_parent->primitive_list, p);
+	PRIMITIVE_LIST_APPEND_VAL(&w->win_parent->primitive_list_tmp, p);
 	
 	
 	// free(b);
@@ -113,6 +117,63 @@ u8 test_drag_2 BIND_FN_PARAMS
 	
 	return 1;
 }
+
+
+u8 spawn_circle BIND_FN_PARAMS
+{
+	PRIMITIVE p =
+	{
+		.type = P_CIRCLE,
+		.color=xx,
+		.c = uki_create_circle(
+			w->win_parent->mouse_x,
+			w->win_parent->mouse_y,
+			50
+		)
+	};
+	PRIMITIVE_LIST_APPEND_VAL(&w->win_parent->primitive_list_permanent, p);
+	return 1;
+}
+
+
+u8 select_primitive BIND_FN_PARAMS
+{
+	PRIMITIVE* p;
+	bool flag = false;
+	ITERATE_LIST(PRIMITIVE, w->win_parent->primitive_list_permanent, n, p)
+	{
+		if (n->p == NULL) break;
+		p = n->p;
+		switch (p->type)
+		{
+			case P_RECT:
+				if (w->win_parent->mouse_x > p->r.x && w->win_parent->mouse_x < p->r.x + p->r.w)
+					if (w->win_parent->mouse_y > p->r.y && w->win_parent->mouse_y < p->r.y + p->r.h)
+						flag = true;
+				break;
+
+			case P_POINT:
+				break;
+
+			case P_CIRCLE:
+				if (w->win_parent->mouse_x > p->c.x - p->c.r && w->win_parent->mouse_x < p->c.x + p->c.r)
+					if (w->win_parent->mouse_y > p->c.y - p->c.r && w->win_parent->mouse_y < p->c.y + p->c.r)
+						flag = true;
+				break;
+		}
+
+		if (flag)
+		{
+			if (p->color.r == selected.r)
+				p->color = xx;
+			else p->color = selected;
+			break;
+		}
+	}
+	return 1;
+}
+
+
 
 u8 test_drag_x BIND_FN_PARAMS
 {
@@ -174,6 +235,7 @@ int main (int argc, char* argv[]) {
 	win_add_child(&win, create_label(&win, 1000, 200, "atak"));
 	win_add_child(&win, create_label(&win, 1000, 220, "NULL"));
 	win_add_child(&win, create_label(&win, 1000, 240, "xxx"));
+	// win_add_child(&win, create_label(&win, 1000, 260, "xxx"));
 	// win_add_child(&win, create_label(&win, 1000, 180, "atak"));
 	focus_set(&win, &win.children[0]);
 	attention_set(&win, &win.children[0]);
@@ -198,7 +260,8 @@ int main (int argc, char* argv[]) {
 	widget_bind(&win.children[3], "<mouse_middle><mouse_move>", test_drag);
 	widget_bind(&win.children[0], "<mouse_left><mouse_move>", test_drag_2);
 	widget_bind(&win.children[0], "z<mouse_move>", test_drag_2);
-	widget_bind(&win.children[0], "a<mouse_move>", empty_test);
+	widget_bind(&win.children[0], "a", spawn_circle);
+	widget_bind(&win.children[0], "s", select_primitive);
 	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win.children[3].binds.size);
 	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win.children[3].binds.size);
 	widget_bind(&win.children[1], "<mouse_middle><mouse_move>", test_drag);
@@ -224,7 +287,7 @@ int main (int argc, char* argv[]) {
 		if (win.children[5].label.tex.rect.x > 1200) win.children[5].label.tex.rect.x = 0;
 		// change_widget_texture_text(&win.children[5], "dwa");
 		
-		
+		win_event_handle(&win);
 		
 		change_widget_texture_int(&win.children[5], win.mouse_x);
 		change_widget_texture_int(&win.children[6], win.mouse_y);
@@ -234,9 +297,13 @@ int main (int argc, char* argv[]) {
 		change_widget_texture_text(&win.children[10], win.attention->name);
 		if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
 		else change_widget_texture_text(&win.children[11], "NULL");
+		char* tmp = keycode_list_pretty(win.keys_held);
+		change_widget_texture_text(&win.children[12], tmp);
+		free(tmp);
+		
 		win_render_default(&win);
+		
 
-		win_event_handle(&win);
 		cap_fps();
 		// win.lock = NULL;
 		// cap_fps_fixed(&ticks, 1000/120);

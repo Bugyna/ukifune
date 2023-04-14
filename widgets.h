@@ -177,6 +177,47 @@ struct WIDGET
 
 };
 
+
+DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode, key)
+char* keycode_list_to_str(KEYCODE_LIST l, char* s)
+{
+	int i = 0;
+
+	// if (s == NULL)
+		// s = calloc(l.length+1, sizeof(char));
+
+	ITERATE_LIST(KEYCODE, l, n, key)
+	{
+		if (n->key == NULL) break;
+		s[i++] = *n->key;
+	}
+
+	s[i] = '\0';
+	return s;
+}
+
+
+char* keycode_list_pretty(KEYCODE_LIST l)
+{
+	int i = 0;
+
+	char* s = calloc(l.length*5+1, sizeof(char));
+	
+	strcpy(s, "!!NULL");
+	ITERATE_LIST(KEYCODE, l, n, key)
+	{
+		if (n->key == NULL) break;
+		s[i++] = *n->key;
+		s[i++] = ' ';
+		s[i++] = '-';
+		s[i++] = '>';
+		s[i++] = ' ';
+	}
+
+	if (i) s[i-3] = '\0';
+	return s;
+}
+
 struct WIN
 {
 	SDL_Window* win;
@@ -198,7 +239,8 @@ struct WIN
 	WIDGET** widget_render_list;
 	// ENTITY** render_list;
 	ENTITY_LIST render_list;
-	PRIMITIVE_LIST primitive_list;
+	PRIMITIVE_LIST primitive_list_tmp;
+	PRIMITIVE_LIST primitive_list_permanent;
 
 	STYLE style;
 

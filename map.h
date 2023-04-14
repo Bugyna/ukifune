@@ -39,7 +39,7 @@ void map_add_entity(MAP* map, ENTITY* e)
 void map_add_renderable_entity(MAP* map, ENTITY* e)
 {
 	map_add_entity(map, e);
-	map->render_list[map->render_list_index++] = map->entity_list[map->entity_index-1];
+	map->render_list[map->render_list_index++] = e;
 }
 
 
