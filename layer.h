@@ -2,6 +2,9 @@
 #include "components.c"
 #include "entity.h"
 
+
+
+
 typedef struct
 {
 	TILE* tiles;
@@ -13,7 +16,7 @@ typedef struct
 	
 	ENTITY** entity_list;
 	ENTITY** render_list;
-} MAP;
+} LAYER;
 
 
 void map_init(MAP* map)
@@ -41,5 +44,6 @@ void map_add_entity(MAP* map, ENTITY* e)
 	// map_add_entity(map, e);
 	// map->render_list[map->render_list_index++] = e;
 // }
+
 
 

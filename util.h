@@ -24,7 +24,7 @@
 #define DEBUGGING 1
 
 
-SDL_Color COLOR_WHITE = (SDL_Color){255, 255, 255};
+static const SDL_Color COLOR_WHITE = (const SDL_Color){255, 255, 255};
 
 
 bool debugging = true;
@@ -77,17 +77,15 @@ ARGB convert_hex_to_argb(int hex)
 }
 
 
-uint32_t hash(const char* key)
+int hash(const char* key)
 {
-	// uint32_t h;
-	// for (int i = 0; i < strlen(key); i++)
-	// {
-		// h += ((int)pow(key[i], 3) << 16) ^ key[i];
-	// }
+	UKI_ASSERT(key != NULL, "trying to hash an empty key %s", "aha");
 
-	// return h;
-	// return strlen(key) * key[0];
-	return strlen(key);
+	int mask = 1 << strlen(key);
+	for (unsigned int i = 0; i < strlen(key); i++) {
+		mask += (int)key[i];
+	}
+	return mask ^ (mask >> 4);
 }
 
 

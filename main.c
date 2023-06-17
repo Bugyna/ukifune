@@ -14,7 +14,7 @@ struct PLAYER
 };
 
 
-WIN win;
+WIN* win;
 WORLD world;
 SDL_Color xx = {150, 150, 150};
 SDL_Color selected = {255, 100, 100};
@@ -80,7 +80,7 @@ u8 test_drag_2 BIND_FN_PARAMS
 	// SDL_Log("aaaaa: %s %d %d %d\n", bind, rect->x, e.motion.x, c->rx);
 	// int tmp = t->rect.x;
 	
-	// win.primitive_list.first->next = NULL;
+	// win->primitive_list.first->next = NULL;
 	// SDL_Log("rect: %d %d %d %d", c->x, c->y, e.motion.x, e.motion.y);
 	// SDL_Log("whatefuickc [ %s ] %s\n\n", w->name, c->bind);
 	
@@ -140,10 +140,10 @@ u8 select_primitive BIND_FN_PARAMS
 {
 	PRIMITIVE* p;
 	bool flag = false;
-	ITERATE_LIST(PRIMITIVE, w->win_parent->primitive_list_permanent, n, p)
+	ITERATE_LIST(PRIMITIVE, w->win_parent->primitive_list_permanent, n)
 	{
-		if (n->p == NULL) break;
-		p = n->p;
+		if (n->val == NULL) break;
+		p = n->val;
 		switch (p->type)
 		{
 			case P_RECT:
@@ -167,7 +167,8 @@ u8 select_primitive BIND_FN_PARAMS
 			if (p->color.r == selected.r)
 				p->color = xx;
 			else p->color = selected;
-			break;
+			flag = false;
+			// break;
 		}
 	}
 	return 1;
@@ -197,10 +198,10 @@ u8 empty_test BIND_FN_PARAMS
 }
 
 int main (int argc, char* argv[]) {
-	win_init(&win);
+	win = win_create();
 	world_init(&world);
 	
-	// TEXTURE tex = create_texture_from_image(win.renderer, 200, 200, 200, 200, "test.jpg");
+	// TEXTURE tex = create_texture_from_image(win->renderer, 200, 200, 200, 200, "test.jpg");
 	// ENTITY en = entity_create_from_texture((VEC3){0, 0, 0}, tex);
 	
 	// entity_init(&en);
@@ -208,7 +209,7 @@ int main (int argc, char* argv[]) {
 	// map_add_renderable_entity(&world.maps[0], en);
 	
 	
-	// win.render_fn = win_render_default;
+	// win->render_fn = win_render_default;
 	// SDL_Log("aaaaaa: %d", world.render_list[0]->components[0].type);
 	
 	// SDL_Event event;
@@ -219,97 +220,103 @@ int main (int argc, char* argv[]) {
 	uint32_t ticks = SDL_GetTicks();
 	EVENT e;
 	// e.type = 0;
-	// (*win.fn[0])(&win, e);
+	// (*win->fn[0])(win, e);
 	// SDL_Log("dd: %s %ld", "シシ", sizeof(WIDGET));
 	
-	win_add_child(&win, create_label(&win, 200, 200, "test"));
-	win.children[1].label.tex = create_texture_from_image(&win, -100, 200, 200, 200, "test.jpg");
-	win_add_child(&win, create_label(&win, 400, 300, "áídwaáí"));
-	win_add_child(&win, create_label(&win, 600, 300, "áídwaídwad"));
-	win_add_child(&win, create_text_input(&win, 500, 400, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 100, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 120, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 140, "atak"));	
-	win_add_child(&win, create_label(&win, 1000, 160, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 180, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 200, "atak"));
-	win_add_child(&win, create_label(&win, 1000, 220, "NULL"));
-	win_add_child(&win, create_label(&win, 1000, 240, "xxx"));
-	// win_add_child(&win, create_label(&win, 1000, 260, "xxx"));
-	// win_add_child(&win, create_label(&win, 1000, 180, "atak"));
-	focus_set(&win, &win.children[0]);
-	attention_set(&win, &win.children[0]);
-	// focus_set(&win, &win.children[3]);
+	win_add_child(win, create_label(win, 200, 200, "test"));
+	win->children[1]->label.tex = create_texture_from_image(win, -100, 200, 200, 200, "test.jpg");
+	win_add_child(win, create_label(win, 400, 300, "áídwaáí"));
+	win_add_child(win, create_label(win, 600, 300, "áídwaídwad"));
+	win_add_child(win, create_text_input(win, 500, 400, "atak"));
+	win_add_child(win, create_label(win, 1000, 100, "atak"));
+	win_add_child(win, create_label(win, 1000, 120, "atak"));
+	win_add_child(win, create_label(win, 1000, 140, "atak"));
+	win_add_child(win, create_label(win, 1000, 160, "atak"));
+	win_add_child(win, create_label(win, 1000, 180, "atak"));
+	win_add_child(win, create_label(win, 1000, 200, "atak"));
+	win_add_child(win, create_label(win, 1000, 220, "NULL"));
+	win_add_child(win, create_label(win, 1000, 240, "xxx"));
+	// win_add_child(win, create_label(win, 1000, 260, "xxx"));
+	// win_add_child(win, create_label(win, 1000, 180, "atak"));
+	focus_set(win, win->children[0]);
+	attention_set(win, win->children[0]);
+	// focus_set(win, &win->children[3]);
 	
 	
 	
-	// change_widget_texture_text(&win.children[5], "dwa");
-	// focus_set_by_name(&win, "TEXT_INPUT4");
-	// focus_set_to_last_child(&win);
-	// SDL_SetTextInputRect(&win.children[4].text_input.tex.rect);
-	// SDL_Log("focus: %s\n", focus_get(&win)->name);
+	// change_widget_texture_text(&win->children[5], "dwa");
+	// focus_set_by_name(win, "TEXT_INPUT4");
+	// focus_set_to_last_child(win);
+	// SDL_SetTextInputRect(&win->children[4].text_input.tex.rect);
+	// SDL_Log("focus: %s\n", focus_get(win)->name);
 	
-	// win_set_render_fn(&win, win_render_test);
-	// widget_bind(&win.children[3], "<keypress>", test_keypress);
-	// widget_bind(&win.children[0], "<mouse_right_drag>", win_close);
-	// widget_bind(&win.children[3], "z<mouse_move>", test_drag);
-	// widget_bind(&win.children[3], "z<mouse_right><mouse_move>", test_drag_x);
-	// widget_bind(&win.children[3], "<z>", test_drag);
-	widget_bind(&win.children[0], "<Escape>", win_close);
-	widget_bind(&win.children[3], "<mouse_right><mouse_move>", test_drag_x);
-	widget_bind(&win.children[3], "<mouse_middle><mouse_move>", test_drag);
-	widget_bind(&win.children[0], "<mouse_left><mouse_move>", test_drag_2);
-	widget_bind(&win.children[0], "z<mouse_move>", test_drag_2);
-	widget_bind(&win.children[0], "a", spawn_circle);
-	widget_bind(&win.children[0], "s", select_primitive);
-	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win.children[3].binds.size);
-	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win.children[3].binds.size);
-	widget_bind(&win.children[1], "<mouse_middle><mouse_move>", test_drag);
+	// win_set_render_fn(win, win_render_test);
+	// widget_bind(&win->children[3], "<keypress>", test_keypress);
+	// widget_bind(&win->children[0], "<mouse_right_drag>", win_close);
+	// widget_bind(&win->children[3], "z<mouse_move>", test_drag);
+	// widget_bind(&win->children[3], "z<mouse_right><mouse_move>", test_drag_x);
+	// widget_bind(&win->children[3], "<z>", test_drag);
+	widget_bind(win->children[0], "<Escape>", win_close);
+	widget_bind(win->children[3], "<mouse_right><mouse_move>", test_drag_x);
+	widget_bind(win->children[3], "<mouse_middle><mouse_move>", test_drag);
+	widget_bind(win->children[0], "<mouse_left><mouse_move>", test_drag_2);
+	widget_bind(win->children[0], "z<mouse_move>", test_drag_2);
+	widget_bind(win->children[0], "a", spawn_circle);
+	widget_bind(win->children[0], "s", select_primitive);
+	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win->children[3].binds.size);
+	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win->children[3].binds.size);
+	widget_bind(win->children[1], "<mouse_middle><mouse_move>", test_drag);
+
+	ANIMATOR a;
+	animator_init(&a, &win->children[1]->label.tex, 100, 10);
 	// exit(1);
 	
 	// char* bind = malloc(300);
 	char* bind;
 	// int offset = 0;
-	// BIND* x = get_bind(win.children[0].binds, "<mouse_right><mouse_move>");
+	// BIND* x = get_bind(win->children[0].binds, "<mouse_right><mouse_move>");
 	// if (x != NULL && x->bind != NULL)
 	// SDL_Log("dwa: %s", x->bind);
 	
-	// x = get_bind(win.children[0].binds, "<mouse_middle><mouse_move>");
+	// x = get_bind(win->children[0].binds, "<mouse_middle><mouse_move>");
 	// if (x != NULL && x->bind != NULL)
 	// SDL_Log("dwa: %s", x->bind);
 	// exit(1);
 
+	// UKI_EXIT(win)
+
 	SDL_StartTextInput();
-	while (win.is_running) {
+	while (win->is_running) {
 		// ticks = SDL_GetTicks();
-		// if (win.focus->name != NULL) change_widget_texture_text(&win.children[9], win.focus->name);
-		win.children[5].label.tex.rect.x+=1*DELTA_TIME;
-		if (win.children[5].label.tex.rect.x > 1200) win.children[5].label.tex.rect.x = 0;
-		// change_widget_texture_text(&win.children[5], "dwa");
+		// if (win->focus->name != NULL) change_widget_texture_text(win->children[9], win->focus->name);
+		win->children[5]->label.tex.rect.x+=1*DELTA_TIME;
+		if (win->children[5]->label.tex.rect.x > 1200) win->children[5]->label.tex.rect.x = 0;
+		// change_widget_texture_text(win->children[5], "dwa");
 		
-		win_event_handle(&win);
+		win_event_handle(win);
 		
-		change_widget_texture_int(&win.children[5], win.mouse_x);
-		change_widget_texture_int(&win.children[6], win.mouse_y);
-		change_widget_texture_int(&win.children[7], FPS_COUNT);
-		change_widget_texture_int(&win.children[8], DELTA_TIME);
-		change_widget_texture_text(&win.children[9], win.focus->name);
-		change_widget_texture_text(&win.children[10], win.attention->name);
-		if (win.lock != NULL) change_widget_texture_text(&win.children[11], win.lock->name);
-		else change_widget_texture_text(&win.children[11], "NULL");
-		char* tmp = keycode_list_pretty(win.keys_held);
-		change_widget_texture_text(&win.children[12], tmp);
+		change_widget_texture_int(win->children[5], win->mouse_x);
+		change_widget_texture_int(win->children[6], win->mouse_y);
+		change_widget_texture_int(win->children[7], FPS_COUNT);
+		change_widget_texture_int(win->children[8], DELTA_TIME);
+		change_widget_texture_text(win->children[9], win->focus->name);
+		change_widget_texture_text(win->children[10], win->attention->name);
+		if (win->lock != NULL) change_widget_texture_text(win->children[11], win->lock->name);
+		else change_widget_texture_text(win->children[11], "NULL");
+		char* tmp = keycode_list_pretty(win->keys_held);
+		change_widget_texture_text(win->children[12], tmp);
 		free(tmp);
+		animator_trigger(&a);
 		
-		win_render_default(&win);
+		win_render_default(win);
 		
 
 		cap_fps();
-		// win.lock = NULL;
+		// win->lock = NULL;
 		// cap_fps_fixed(&ticks, 1000/120);
 	}
 	
 	
-	uki_close(&win);
+	uki_close(win);
 	return 0;
 }

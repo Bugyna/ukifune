@@ -29,6 +29,9 @@ enum
 	ENTITY_TILE,
 };
 
+#define ENTITY_SET(e_pos, n) *e_pos = n
+#define ENTITY_SET_REL(e_pos, n) *e_pos = *e_pos + n
+
 typedef struct ENTITY ENTITY;
 
 
@@ -47,7 +50,8 @@ typedef struct
 struct ENTITY
 {
 	char* name;
-	int x, y;
+	int* x;
+	int* y;
 	SDL_Rect view;
 	// SDL_Rect pos, abs_pos;
 	SDL_Rect* colliders;
@@ -55,7 +59,7 @@ struct ENTITY
 	TEXTURE tex;
 };
 
-DEFINE_LINKED_LIST(ENTITY, ENTITY, e)
+DEFINE_LINKED_LIST(ENTITY, ENTITY)
 
 // DEF_GET_COMPONENT_ATTR_PTR_FN(TEXTURE*, get_component_texture_ptr, tex)
 
@@ -67,16 +71,34 @@ DEFINE_LINKED_LIST(ENTITY, ENTITY, e)
 // }
 
 
-ENTITY entity_create_from_texture(int x, int y, TEXTURE tex)
+
+void entity_init_from_texture(ENTITY* e, TEXTURE tex)
+{
+	e->name = "dwa";
+	
+	e->collider_index = 0;
+	e->collider_size = 5;
+	e->colliders = malloc(e->collider_size*sizeof(SDL_Rect));
+	e->tex = tex;
+
+	e->x = &e->tex.rect.x;
+	e->y = &e->tex.rect.y;
+}
+
+
+
+ENTITY entity_create_from_texture(TEXTURE tex)
 {
 	ENTITY e;
 	e.name = "dwa";
-	e.x = x;
-	e.y = y;
+	
 	e.collider_index = 0;
 	e.collider_size = 5;
 	e.colliders = malloc(e.collider_size*sizeof(SDL_Rect));
 	e.tex = tex;
+
+	e.x = &e.tex.rect.x;
+	e.y = &e.tex.rect.y;
 
 	return e;
 }

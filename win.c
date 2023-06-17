@@ -2,13 +2,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <stdlib.h>
 
 #include "widgets.h"
 #include "entity.c"
 
 #define FPS 60
-#define WHITE (SDL_Color){255, 255, 255}
+// #define WHITE (SDL_Color){255, 255, 255}
 #define iterate(index, size, iterator, iterated) for (int index = 0; i < size; iterator = iterated[index++])
+
+
 
 
 int LAST_TIME, FPS_COUNT, FRAMES_ELAPSED, DELTA_TIME, ONE_SECOND_DELIMETER;
@@ -16,8 +19,9 @@ int LAST_TIME, FPS_COUNT, FRAMES_ELAPSED, DELTA_TIME, ONE_SECOND_DELIMETER;
 void win_render_default(WIN* win);
 
 
-void win_init(WIN* w)
+WIN* win_create()
 {
+	WIN* w = malloc(sizeof(WIN));
 	LAST_TIME = 0;
 	FPS_COUNT = 0;
 	FRAMES_ELAPSED = 0;
@@ -57,7 +61,7 @@ void win_init(WIN* w)
 	
 	SDL_GetWindowSize(w->win, &w->width, &w->height);
 	
-	global_font = TTF_OpenFont("Ac437_9x8.ttf", 18);
+	global_font = TTF_OpenFont("Ac437_9x8.ttf", 24);
 	w->style.font = global_font;
 	
 	w->is_running = true;
@@ -68,6 +72,8 @@ void win_init(WIN* w)
 	
 	w->child_index = 1;
 	w->children = calloc(20, sizeof(WIDGET));
+
+	WIDGET_MAP_INIT(&w->children_map, 20);
 	
 	w->render_index = 0;
 	w->widget_render_list = calloc(20, sizeof(WIDGET*));
@@ -75,22 +81,33 @@ void win_init(WIN* w)
 	PRIMITIVE_LIST_INIT(&w->primitive_list_tmp);
 	PRIMITIVE_LIST_INIT(&w->primitive_list_permanent);
 	// ENTITY_LIST_INIT(&w->render_list);
-	ENTITY_LIST_INIT_VAL(&w->render_list, entity_create_from_texture(-1, -1, create_texture_from_text(w, -1, -1, " ", COLOR_WHITE)));
+	ENTITY_LIST_INIT(&w->render_list);
 	KEYCODE_LIST_INIT(&w->keys_held);
 	// w->children = calloc(6, sizeof(WIDGET)); // this throws floating point exception somehow lmao
 	
-	WIDGET widget = create_label(w, 1280, 720, "WIN");
-	widget.type = W_WIN;
-	widget.name = "WIN";
-	widget.win_parent = w;
+	WIDGET* widget = create_label(w, 1280, 720, "WIN");
+	widget->type = W_WIN;
+	widget->name = "WIN";
+	widget->win_parent = w;
 	w->children[0] = widget;
-	w->attention = &w->children[0];
-	w->focus = &w->children[0];
+	w->attention = w->children[0];
+	w->focus = w->children[0];
 	w->lock = NULL;
 	w->style.font = font;
 	w->style.bg = create_color_from_hex(0x050505);
 	w->style.fg = create_color_from_hex(0xFFFFFF);
+
+
+	// properly init mouse position
+	SDL_GetGlobalMouseState(&w->mouse_x, &w->mouse_y);
+	int x, y;
+	SDL_GetWindowPosition(w->win, &x, &y);
+	w->mouse_x -= x;
+	w->mouse_y -= y;
+	
 	// w->render_fn = win_render_default;
+	// #define exit win_exit
+	return w;
 }
 
 
@@ -131,17 +148,17 @@ EVENT get_last_event(BINDS_HASHMAP h, char* bind)
 }
 
 
-void win_bind(WIN* w, char* bind, u8(*fn)BIND_FN_PARAMS)
+void win_bind_system(WIN* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
 {
-	// int type = 0;
-	// if (!strcmp(bind, "<mousemove>")) {
-	// type = SDL_MOUSEMOTION;
-	// }
-	
-	w->binds.binds[hash(bind) % w->binds.size].bind = bind;
-	w->binds.binds[hash(bind) % w->binds.size].custom = fn;
-	SDL_Log("hash: %d", hash(bind) % w->binds.size);
+	widget_bind_(w->children[0], bind, fn, 1);
 }
+
+void win_bind(WIN* w, const char* bind, u8(*fn)BIND_FN_PARAMS)
+{
+	widget_bind_(w->children[0], bind, fn, 0);
+}
+
+
 
 
 void set_attention_auto(WIN* w)
@@ -151,13 +168,13 @@ void set_attention_auto(WIN* w)
 	// WIDGET iterator;
 	// iterate(i, w->child_index, iterator, w->children) {
 	for (int i = 1; i < w->child_index; i++) {
-		if (collide_point(w->mouse_x, w->mouse_y, get_widget_rect(&w->children[i]))) {
-			if (w->attention != &w->children[0] && collide_point(w->mouse_x, w->mouse_y, get_widget_rect(w->focus))) return; // focused widgets get preffered
-			w->attention = &w->children[i];
+		if (collide_point(w->mouse_x, w->mouse_y, get_widget_rect(w->children[i]))) {
+			if (w->attention != w->children[0] && collide_point(w->mouse_x, w->mouse_y, get_widget_rect(w->focus))) return; // focused widgets get preffered
+			w->attention = w->children[i];
 			return;
 		}
 	}
-	w->attention = &w->children[0];
+	w->attention = w->children[0];
 	// if (strcmp(w->focus->name, tmp->name))
 	// widget_handle_attention_release(tmp);
 	
@@ -170,9 +187,9 @@ void set_focus_auto(WIN* w)
 	WIDGET* tmp = w->focus;
 	for (int i = 1; i < w->child_index; i++) {
 		// SDL_Log("idnex: %d %d %d", w->child_index, w->mouse_x, w->mouse_y);
-		if (collide_point(w->mouse_x, w->mouse_y, get_widget_rect(&w->children[i]))) {
+		if (collide_point(w->mouse_x, w->mouse_y, get_widget_rect(w->children[i]))) {
 			// SDL_Log("here: %s %d %d %d %d", w->children[i].name, get_widget_rect(&w->children[i]).x, get_widget_rect(&w->children[i]).y, get_widget_rect(&w->children[i]).x + get_widget_rect(&w->children[i]).w, get_widget_rect(&w->children[i]).y+get_widget_rect(&w->children[i]).h);
-			w->focus = &w->children[i];
+			w->focus = w->children[i];
 			return;
 		}
 	}
@@ -180,7 +197,7 @@ void set_focus_auto(WIN* w)
 	// if (collide_point(w->mouse_x, w->mouse_y, get_widget_rect(w->focus))) {
 	// return;
 	// }
-	w->focus = &w->children[0];
+	w->focus = w->children[0];
 	// if (strcmp(w->focus->name, tmp->name))
 	// widget_handle_focus_release(tmp);
 	
@@ -199,15 +216,15 @@ void focus_set(WIN* w, WIDGET* widget)
 
 void focus_set_to_last_child(WIN* w)
 {
-	w->focus = &w->children[w->child_index-1];
+	w->focus = w->children[w->child_index-1];
 }
 
 
 WIDGET* get_widget_by_name(WIN* w, const char* name)
 {
 	for (int i = 0; i < w->child_index; i++)
-		if (!strcmp(w->children[i].name, name))
-		return &w->children[i];
+		if (!strcmp(w->children[i]->name, name))
+		return w->children[i];
 	
 	return NULL;
 }
@@ -371,7 +388,7 @@ char* win_handle_mouse_move(WIN* w, EVENT e)
 	// SDL_Log("win_handle_mouse move e.button.button: %d %d", e.motion.state, SDL_BUTTON_RMASK);
 	// widget_localize_mouse_location(w->focus, &e);
 	char* tmp = malloc(128);
-  keycode_list_to_str(w->keys_held, tmp);
+	keycode_list_to_str(w->keys_held, tmp);
 	
 
 	
@@ -557,7 +574,7 @@ char* win_handle_keydown(WIN* w, EVENT e)
 	strcpy(keypress_tmp, "<keypress>");
 	strcpy(keypress_tmp+10, tmp);
 
-	execute_widget_bind(w->focus, e, keypress_tmp);
+	// execute_widget_bind(w->focus, e, keypress_tmp);
 	
 	
 	if (!e.key.repeat) {
@@ -569,10 +586,10 @@ char* win_handle_keydown(WIN* w, EVENT e)
 		bool flag = 1;
 
 
-		ITERATE_LIST(KEYCODE, w->keys_held, n, key)
+		ITERATE_LIST(KEYCODE, w->keys_held, n)
 		// for (KEYCODE_NODE* n = w->keys_held.first; n != NULL || n->next != NULL; n = n->next)
 		{
-			if (*n->key == e.key.keysym.sym) {
+			if (*n->val == e.key.keysym.sym) {
 				flag = 0;
 				break;
 			}
@@ -596,67 +613,69 @@ char* win_handle_keydown(WIN* w, EVENT e)
 char* win_handle_keyup(WIN* w, EVENT e)
 {
 	char* tmp = malloc(32);
+	strcpy(tmp, "[keyup]");
+	tmp[8] = '\0';
 	if (e.key.keysym.sym > 31 && e.key.keysym.sym < 128)
 	{
-		tmp[0] = e.key.keysym.sym;
-		tmp[1] = '\0';
+		tmp[7] = e.key.keysym.sym;
 	}
 	
 	else {
-		tmp[0] = '<';
-		strcpy(tmp+1, SDL_GetKeyName(e.key.keysym.sym));
+		tmp[7] = '<';
+		strcpy(tmp+8, SDL_GetKeyName(e.key.keysym.sym));
 		int len = strlen(tmp);
 		tmp[len] = '>';
 		tmp[len+1] = '\0';
 	}
 
-	ITERATE_LIST(KEYCODE, w->keys_held, n, key)
+	ITERATE_LIST(KEYCODE, w->keys_held, n)
 	{
-		if (*n->key == e.key.keysym.sym) {
+		if (*n->val == e.key.keysym.sym) {
+			if (n->val == NULL) break;
 			KEYCODE_LIST_POP_AT_PTR(&w->keys_held, n);
 			break;
 		}
 	}
 
-	// SDL_Log("keyup: %s", tmp);
-	// execute_widget_bind(w->focus, e, "<keyup>");;
+	SDL_Log("keyup: %s", tmp);
+	// execute_widget_bind(w->focus, e, "<keyup>");
+	execute_widget_bind(w->focus, e, tmp);
 	return tmp;
 }
 
 
 
 
-u8 win_handle_keypress(WIN* w, EVENT e)
+char* win_handle_keypress(WIN* w, EVENT e)
 {
-	// char s[2];
-	// sprintf(s, "%c", e.key.keysym.sym);
-	char* a = malloc(2);
-	
-	switch (e.type)
+	char* tmp;
+	ITERATE_LIST(KEYCODE, w->keys_held, n)
 	{
-		case SDL_KEYDOWN:
-		a[0] = e.key.keysym.sym;
-		a[1] = '\0';
-		break;
-		
-		case SDL_TEXTEDITING:
-		a = e.edit.text;
-		break;
-		
-		default:
-		a = e.text.text;
+		tmp = malloc(30);
+		strcpy(tmp, "[keyhold]");
+		tmp[10] = '\0';
+
+		if (n->val == NULL) break;
+		if (*n->val > 31 && *n->val < 128)
+		{
+			tmp[9] = *n->val;
+		}
+
+		else {
+			tmp[9] = '<';
+			strcpy(tmp+10, SDL_GetKeyName(e.key.keysym.sym));
+			int len = strlen(tmp);
+			tmp[len] = '>';
+			tmp[len+1] = '\0';
+		}
+		execute_widget_bind(w->focus, e, tmp);
+		// SDL_Log("tmp: %s", tmp);
+		free(tmp);
 	}
-	
-	char tmp[4] = {'<', a[0], '>', '\0'};
-	
-	if (!e.key.repeat) {
-		execute_widget_bind(w->focus, e, "<keypress>");
-		execute_widget_bind(w->focus, e, "<keypress>");
-		SDL_Log("handle keypress: %s", tmp);
-	}
-	else execute_widget_bind(w->focus, e, "<keydown>");
-	
-	return 1;
+
+	// execute_widget_bind(w->focus, e, keypress_tmp);
+
+	return "";
 }
 
 
@@ -729,10 +748,11 @@ void cap_fps_fixed(uint32_t period)
 
 
 
-void win_add_child(WIN* w, WIDGET widget)
+void win_add_child(WIN* w, WIDGET* widget)
 {
-	SDL_Log("adding child: %s %d", widget.name, w->child_index);
+	SDL_Log("adding child: %s %d", widget->name, w->child_index);
 	w->children[w->child_index++] = widget;
+	WIDGET_MAP_ADD(&w->children_map, widget->name, widget);
 	alloc_win_children(w);
 }
 
@@ -771,6 +791,7 @@ void win_handle_window_event(WIN* w, EVENT e)
 
 void win_event_handle(WIN* win)
 {
+	// SDL_GetMouseState(&win->mouse_x, &win->mouse_y);
 	char* bind = malloc(120);
 	while (SDL_PollEvent(&win->event)) {
 		// PRIMITIVE_LIST_POP(&win.primitive_list);
@@ -823,6 +844,7 @@ void win_event_handle(WIN* win)
 			win_handle_keyup(win, win->event);
 			break;
 		}
+		win_handle_keypress(win, win->event);
 	}
 }
 
@@ -838,26 +860,26 @@ void win_render_default(WIN* w)
 		// #endif
 		
 		
-		if (w->children[i].render_fn != NULL)
-			w->children[i].render_fn(&w->children[i]);
+		if (w->children[i]->render_fn != NULL)
+			w->children[i]->render_fn(w->children[i]);
 		
 		else {
-			TEXTURE* tex = get_widget_texture_ptr(&w->children[i]);
+			TEXTURE* tex = get_widget_texture_ptr(w->children[i]);
 			if (tex == NULL) { SDL_Log("oh no a null fuckery"); continue; }
 			SDL_RenderCopyEx(w->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
 		}
 	}
 	
 
-	ITERATE_LIST(ENTITY, w->render_list, n, e)
+	ITERATE_LIST(ENTITY, w->render_list, n)
 	// for (ENTITY_NODE* n = w->render_list.first; (n != NULL && n != n->next); n = n->next)
 	{
 		// SDL_Log("dwadw: %s %d %d", n->e->name, n->e->x, n->e->y);
 		#if DEBUGGING == 1
-			SDL_RenderDrawRect(w->renderer, &n->e->tex.rect);
+			SDL_RenderDrawRect(w->renderer, &n->val->tex.rect);
 		#endif
 
-		render_entity(w, n->e);
+		render_entity(w, n->val);
 	}
 	
 	render_primitive_list(w, w->primitive_list_tmp);
@@ -881,6 +903,20 @@ void uki_close(WIN* win)
 	SDL_Quit();
 	exit(0);
 }
+
+
+// void uki_exit(WIN* win)
+// {
+	// win->is_running = false;
+	// SDL_DestroyRenderer(win->renderer);
+	// SDL_DestroyWindow(win->win);
+	
+	// TTF_CloseFont(win->style.font);
+	// IMG_Quit();
+	// TTF_Quit();
+	// SDL_Quit();
+	// exit(-1);
+// }
 
 u8 win_close BIND_FN_PARAMS
 {

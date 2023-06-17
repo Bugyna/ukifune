@@ -1,5 +1,6 @@
 #pragma once
 #include "widgets.h"
+#include "animator.h"
 // bool win_check_collision(WIN* w, 
 
 DEF_GET_WIDGET_ATTR_PTR_FN(TEXTURE*, get_widget_textures, .tex)
@@ -268,21 +269,22 @@ void widget_localize_mouse_location(WIDGET* w, EVENT* e)
 }
 
 
-WIDGET create_label(WIN* w, int x, int y, const char* text)
+WIDGET* create_label(WIN* w, int x, int y, const char* text)
 {
 	SDL_Log("CREATING LABEL %s", text);
-	WIDGET widget;
-	widget_init(w, &widget, W_LABEL);
+	WIDGET* widget = malloc(sizeof(WIDGET));
+	widget_init(w, widget, W_LABEL);
 	LABEL l;
 	l.text.size = 64;
 	l.text.index = 0;
 	l.text.str = malloc(l.text.size);
 	strcpy(l.text.str, text);
 
-	l.tex = create_texture_from_text(w, x, y, text, widget.style.fg);
-	SDL_Log("ddddddd");
+	l.tex = create_texture_from_text(w, x, y, text, widget->style.fg);
+	widget->tex = &l.tex;
+	// SDL_Log("ddddddd");
     
-	widget.label = l;
+	widget->label = l;
 	return widget;
 }
 
@@ -342,25 +344,25 @@ void change_widget_texture_int(WIDGET* w, int num)
 }
 
 
-WIDGET create_text_input(WIN* w, int x, int y, char* text)
+WIDGET* create_text_input(WIN* w, int x, int y, char* text)
 {
-	WIDGET widget;
-	widget_init(w, &widget, W_TEXT_INPUT);
+	WIDGET* widget = malloc(sizeof(WIDGET));
+	widget_init(w, widget, W_TEXT_INPUT);
 	TEXT_INPUT t;
     
 	t.text.size = 64;
 	t.text.index = strlen(text);
 	t.text.str = malloc(t.text.size);
 	strcpy(t.text.str, text);
-	t.tex = create_texture_from_text(w, x, y, text, widget.style.fg);
-	t.cursor = create_texture_from_text(w, x+t.tex.rect.w, y, "\u2588", widget.style.fg);
+	t.tex = create_texture_from_text(w, x, y, text, widget->style.fg);
+	t.cursor = create_texture_from_text(w, x+t.tex.rect.w, y, "\u2588", widget->style.fg);
 	// int tmp_w = 0, tmp_h = 0;
 	// SDL_Log("motheffucker: %d", TTF_SizeUTF8(w->style.font, "\u2588\u2588\u2588\u2588", &tmp_w, &tmp_h));
 	// t.cursor = create_texture_from_image(w->renderer, x+t.tex.rect.w, y, tmp_w, tmp_h, "maybe.png");
-	widget_bind_system(&widget, "<keypress>", text_input_handle_keydown);
+	widget_bind_system(widget, "<keypress>", text_input_handle_keydown);
     
-	widget.text_input = t;
-	widget.render_fn = render_text_input;
+	widget->text_input = t;
+	widget->render_fn = render_text_input;
 	return widget;
 }
 

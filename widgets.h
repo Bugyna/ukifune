@@ -158,9 +158,12 @@ struct WIDGET
 	
 	STYLE style;
 
+	TEXTURE* tex;
+
 	int child_index;
 	void(*render_fn)(WIDGET*);
 
+	int x, y;
 
 	int last_click_rx;
 	int last_click_ry;
@@ -178,7 +181,7 @@ struct WIDGET
 };
 
 
-DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode, key)
+DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode)
 char* keycode_list_to_str(KEYCODE_LIST l, char* s)
 {
 	int i = 0;
@@ -186,10 +189,10 @@ char* keycode_list_to_str(KEYCODE_LIST l, char* s)
 	// if (s == NULL)
 		// s = calloc(l.length+1, sizeof(char));
 
-	ITERATE_LIST(KEYCODE, l, n, key)
+	ITERATE_LIST(KEYCODE, l, n)
 	{
-		if (n->key == NULL) break;
-		s[i++] = *n->key;
+		if (n->val == NULL) break;
+		s[i++] = *n->val;
 	}
 
 	s[i] = '\0';
@@ -204,10 +207,10 @@ char* keycode_list_pretty(KEYCODE_LIST l)
 	char* s = calloc(l.length*5+1, sizeof(char));
 	
 	strcpy(s, "!!NULL");
-	ITERATE_LIST(KEYCODE, l, n, key)
+	ITERATE_LIST(KEYCODE, l, n)
 	{
-		if (n->key == NULL) break;
-		s[i++] = *n->key;
+		if (n->val == NULL) break;
+		s[i++] = *n->val;
 		s[i++] = ' ';
 		s[i++] = '-';
 		s[i++] = '>';
@@ -217,6 +220,9 @@ char* keycode_list_pretty(KEYCODE_LIST l)
 	if (i) s[i-3] = '\0';
 	return s;
 }
+
+
+DEFINE_HASHMAP(WIDGET_MAP, WIDGET)
 
 struct WIN
 {
@@ -231,7 +237,9 @@ struct WIN
 
 	STRING current_bind_execute;
 
-	WIDGET* children;
+
+	WIDGET** children;
+	WIDGET_MAP children_map;
 	WIDGET* focus;
 	WIDGET* attention;
 	WIDGET* lock;

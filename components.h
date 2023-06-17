@@ -42,7 +42,7 @@ typedef struct
 		
 	};
 } PRIMITIVE;
-DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE, p)
+DEFINE_LINKED_LIST(PRIMITIVE, PRIMITIVE)
 
 
 struct STRING
@@ -82,11 +82,21 @@ struct COMPONENT
 
 typedef struct
 {
-	int x, y;
+	int a, b;
 } VEC2;
 
 typedef struct
 {
-	int x, y, z;
+	int a, b, c;
 } VEC3;
+
+typedef struct
+{
+	int a, b, c, d;
+} VEC4;
+
+typedef struct
+{
+	int a, b, c, d;
+} RECT;
 
