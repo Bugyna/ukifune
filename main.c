@@ -201,7 +201,7 @@ int main (int argc, char* argv[]) {
 	win = win_create();
 	world_init(&world);
 	
-	// TEXTURE tex = create_texture_from_image(win->renderer, 200, 200, 200, 200, "test.jpg");
+	// TEXTURE test_img = create_texture_from_image(win->renderer, 200, 200, 200, 200, "test.jpg");
 	// ENTITY en = entity_create_from_texture((VEC3){0, 0, 0}, tex);
 	
 	// entity_init(&en);
@@ -267,8 +267,21 @@ int main (int argc, char* argv[]) {
 	// SDL_Log("hash mouse middle move: %d", hash("<mouse_middle><mouse_move>") % win->children[3].binds.size);
 	widget_bind(win->children[1], "<mouse_middle><mouse_move>", test_drag);
 
-	ANIMATOR a;
-	animator_init(&a, &win->children[1]->label.tex, 100, 10);
+	ENTITY* en = entity_create();
+	ENTITY* en1 = entity_create();
+	TEXTURE* atlas = slice_map(win, "explosion1.png", 4, 4, 256, 256, 100, 105, 60, 60, 1.5);
+	ANIMATOR* a = create_anim(en, atlas, 16, 4, NULL);
+	// for (int i = 0; i < 15; i++)
+		// rescale_texture(&atlas[i], 300, 300);
+	entity_add_animator(en, a);
+
+	TEXTURE t = create_texture_from_image(win, 400, 200, 200, 200, "explosion1.png");
+	en1->tex = &t;
+	en->tex = &atlas[0];
+	ENTITY_LIST_APPEND(&win->render_list, en);
+	// ENTITY_LIST_APPEND(&win->render_list, en1);
+	// entity_add_animator(en, a);
+	// animator_init(&a, &win->children[1]->label.tex, 100, 10);
 	// exit(1);
 	
 	// char* bind = malloc(300);
@@ -298,7 +311,7 @@ int main (int argc, char* argv[]) {
 		change_widget_texture_int(win->children[5], win->mouse_x);
 		change_widget_texture_int(win->children[6], win->mouse_y);
 		change_widget_texture_int(win->children[7], FPS_COUNT);
-		change_widget_texture_int(win->children[8], DELTA_TIME);
+		change_widget_texture_int(win->children[8], FRAMES_ELAPSED);
 		change_widget_texture_text(win->children[9], win->focus->name);
 		change_widget_texture_text(win->children[10], win->attention->name);
 		if (win->lock != NULL) change_widget_texture_text(win->children[11], win->lock->name);
@@ -306,8 +319,10 @@ int main (int argc, char* argv[]) {
 		char* tmp = keycode_list_pretty(win->keys_held);
 		change_widget_texture_text(win->children[12], tmp);
 		free(tmp);
-		animator_trigger(&a);
-		
+
+		if (FRAMES_ELAPSED % a->freq == 0) {
+			animator_trigger(a);
+		}
 		win_render_default(win);
 		
 

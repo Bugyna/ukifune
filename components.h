@@ -5,6 +5,7 @@
 
 #include "util.h"
 #include "circle.h"
+#include "animator.h"
 
 #define WHITE (SDL_Color){255, 255, 255}
 TTF_Font* font;
@@ -12,9 +13,12 @@ TTF_Font* font;
 
 enum
 {
+	C_COMPONENT,
 	C_COLLIDER,
 	C_RIGIDBODY,
 	C_TEXTURE,
+	C_ATLAS,
+	C_ANIMATOR,
 };
 
 typedef enum
@@ -70,15 +74,31 @@ struct TEXTURE
 };
 
 
+typedef struct
+{
+	SDL_Rect rect;
+	int rows, columns;
+	int offset_x, offset_y;
+	int w, h;
+
+	SDL_Texture* tex;
+	SDL_Surface* surf;
+} ATLAS;
+
+
 struct COMPONENT
 {
 	int type;
 	union
 	{
-		TEXTURE tex;
-		RIGIDBODY rb;
+		TEXTURE* tex;
+		ATLAS* atlas;
+		ANIMATOR* anim;
 	};
 };
+
+DEFINE_LINKED_LIST(COMPONENT, COMPONENT)
+DEFINE_HASHMAP(COMPONENT_MAP, COMPONENT)
 
 typedef struct
 {

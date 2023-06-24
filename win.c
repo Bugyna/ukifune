@@ -56,7 +56,7 @@ WIN* win_create()
 									 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 									 );
 	
-	SDL_SetRenderDrawBlendMode(w->renderer, SDL_BLENDMODE_BLEND);
+	// SDL_SetRenderDrawBlendMode(w->renderer, SDL_BLENDMODE_BLEND);
 	
 	
 	SDL_GetWindowSize(w->win, &w->width, &w->height);
@@ -850,9 +850,10 @@ void win_event_handle(WIN* win)
 
 void win_render_default(WIN* w)
 {
-	SDL_SetRenderDrawColor(w->renderer, 0, 0, 0, 255);
+	SDL_SetRenderDrawColor(w->renderer, 10, 0, 25, 255);
 	SDL_RenderClear(w->renderer);
 	SDL_SetRenderDrawColor(w->renderer, 255, 0, 75, 255);
+	// SDL_SetRenderDrawBlendMode(w->renderer, SDL_BLENDMODE_NONE);
 	
 	for (int i = 1; i < w->child_index; i++) {
 		// #if DEBUGGING == 1
@@ -871,15 +872,42 @@ void win_render_default(WIN* w)
 	}
 	
 
+
+
+	// ITERATE_LIST(ENTITY, w->render_list, n)
+	// {
+		// ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_ANIMATOR)
+		// {
+			// // SDL_Log("frame: %d %d", val->anim->frame->rect.x, val->anim->frame->rect.y);
+			// // #if DEBUGGING == 1
+				// // SDL_RenderDrawRect(w->renderer, &val->anim->frame->rect);
+			// // #endif
+	
+			// // render_texture(w, val->anim->frame);
+		// }
+	// }
+
+	// ITERATE_LIST(ENTITY, w->render_list, n)
+	// {
+		// ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_TEX)
+		// {
+			// SDL_Log("frame: %d %d", val->anim->frame->rect.x, val->anim->frame->rect.y);
+			// // #if DEBUGGING == 1
+				// // SDL_RenderDrawRect(w->renderer, &val->anim->frame->rect);
+			// // #endif
+	
+			// // render_texture(w, val->anim->frame);
+		// }
+	// }
+
 	ITERATE_LIST(ENTITY, w->render_list, n)
-	// for (ENTITY_NODE* n = w->render_list.first; (n != NULL && n != n->next); n = n->next)
 	{
-		// SDL_Log("dwadw: %s %d %d", n->e->name, n->e->x, n->e->y);
+		// SDL_Log("frame: %s %d %d", n->val->name, n->val->tex->rect.w, n->val->tex->rect.h);
 		#if DEBUGGING == 1
-			SDL_RenderDrawRect(w->renderer, &n->val->tex.rect);
+			SDL_RenderDrawRect(w->renderer, &n->val->tex->rect);
 		#endif
 
-		render_entity(w, n->val);
+		render_texture(w, n->val->tex);
 	}
 	
 	render_primitive_list(w, w->primitive_list_tmp);

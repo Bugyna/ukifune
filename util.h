@@ -2,6 +2,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "error.h"
 #include "hashmap.h"
 #include "linked_list.h"

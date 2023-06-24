@@ -56,8 +56,12 @@ TEXTURE create_texture_from_image(WIN* win, int x, int y, int w, int h, const ch
 	// SDL_Surface* tmp = IMG_Load(path);
 	// SDL_BlitSurface(tmp, NULL, tex.surf, &tex.rect);
 	tex.surf = IMG_Load(path);
+	// Uint32 colorkey = SDL_MapRGB(loadedSurface->format, 0, 0, 0);
+	// SDL_SetColorKey(loadedSurface, SDL_TRUE, colorkey);
+
 	UKI_ASSERT(tex.surf, "something went wrong when loading image from path: %s", path);
 	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
+	// SDL_SetTextureAlphaMod(tex.tex, 0);
 	if (w == -1 || h == -1)
 		tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};
 	else
@@ -67,6 +71,13 @@ TEXTURE create_texture_from_image(WIN* win, int x, int y, int w, int h, const ch
 }
 
 
+void rescale_texture(TEXTURE* tex, int w, int h)
+{
+	
+	tex->rect.w = w;
+	tex->rect.h = h;
+}
+
 void update_texture(TEXTURE* tex)
 {
 	
@@ -74,6 +85,7 @@ void update_texture(TEXTURE* tex)
 
 void render_texture(WIN* win, TEXTURE* tex)
 {
+	SDL_SetTextureBlendMode(win->renderer, SDL_BLENDMODE_NONE);
 	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
 }
 
