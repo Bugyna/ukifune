@@ -6,11 +6,15 @@ for (TYPE##_MAP_BUCKET* VAR_NAME = ENTRY; VAR_NAME != NULL && VAR_NAME->val != N
 
 #define ITERATE_HASHMAP(MAP, MAP_TYPE, VAL_TYPE, KEY)\
 MAP_TYPE##_BUCKET* BUCKET = MAP_TYPE##_GET_BUCKET(MAP, KEY);\
-for (VAL_TYPE* val = BUCKET->val; BUCKET != NULL && val != NULL; BUCKET = BUCKET->next, val=BUCKET->val)
+VAL_TYPE* val;\
+if (BUCKET != NULL) val = BUCKET->val;\
+for (VAL_TYPE* val = BUCKET->val; BUCKET != NULL && val != NULL && BUCKET->next->key != NULL; BUCKET = BUCKET->next, val=BUCKET->val)
 
 #define ITERATE_HASHMAP_INDEX(MAP, MAP_TYPE, VAL_TYPE, N)\
 MAP_TYPE##_BUCKET* BUCKET = MAP_TYPE##_GET_BUCKET_AT_INDEX(MAP, N);\
-for (VAL_TYPE* val = BUCKET->val; BUCKET != NULL && val != NULL; BUCKET = BUCKET->next, val=BUCKET->val)
+VAL_TYPE* val;\
+if (BUCKET != NULL) val = BUCKET->val;\
+for (; BUCKET != NULL && val != NULL && BUCKET->next->key != NULL; BUCKET = BUCKET->next, val=BUCKET->val)
 
 #define DEFINE_HASHMAP(NAME, VAL_TYPE)\
 typedef struct NAME NAME;\
@@ -50,15 +54,15 @@ static inline NAME##_BUCKET* NAME##_GET_BUCKET(NAME* hm, const char* key)\
 }\
 static inline NAME##_BUCKET* NAME##_GET_BUCKET_AT_INDEX(NAME* hm, int n)\
 {\
-	char* key = malloc(20);\
+	char* key = calloc(20, sizeof(char));\
 	sprintf(key, "%d", n);\
 	int h = hash(key) % hm->size;\
 	NAME##_BUCKET* b = &hm->list[h];\
 	check:\
-	if (b != NULL && b->val && b->key != NULL && strcmp(b->key, key)) { b = b->next; goto check;}\
+	if (b != NULL && b->key != NULL && strcmp(b->key, key) && b->val != NULL) { b = b->next; goto check;}\
 	if (b == NULL || b->val == NULL || b->key == NULL) {\
-		free(key);\
 		UKI_WARNING("'%s' could not be found", key);\
+		free(key);\
 		return NULL;\
 	}\
 \
@@ -100,7 +104,7 @@ static inline void NAME##_ADD(NAME* hm, const char* key, VAL_TYPE* val)\
 \
 static inline void NAME##_ADD_AT_INDEX(NAME* hm, int n, VAL_TYPE* val)\
 {\
-	char* key = malloc(20);\
+	char* key = calloc(20, sizeof(char));\
 	sprintf(key, "%d", n);\
 	int h = hash(key) % hm->size;\
 	NAME##_BUCKET* b = &hm->list[h];\
@@ -141,7 +145,7 @@ static inline void NAME##_ADD_COPY(NAME* hm, const char* key, VAL_TYPE* val)\
 \
 static inline void NAME##_ADD_COPY_AT_INDEX(NAME* hm, int n, VAL_TYPE* val)\
 {\
-	char* key = malloc(20);\
+	char* key = calloc(20, sizeof(char));\
 	sprintf(key, "%d", n);\
 	int h = hash(key) % hm->size;\
 	NAME##_BUCKET* b = &hm->list[h];\

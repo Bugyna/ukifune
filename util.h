@@ -28,7 +28,7 @@
 #define DEBUGGING 1
 
 
-static const SDL_Color COLOR_WHITE = (const SDL_Color){255, 255, 255};
+static const SDL_Color COLOR_WHITE = {255, 255, 255};
 
 
 bool debugging = true;

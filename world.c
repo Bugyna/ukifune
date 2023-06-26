@@ -9,7 +9,7 @@ void win_set_render_queue(WIN* win, MAP* map, int x, int y, int cx, int cy)
 	for (int i = 0; i < map->entity_index; i++)
 	{
 		if (map->entity_list[i]->name == NULL) break;
-		SDL_Log("en: %p", map->entity_list[i]);
+		// SDL_Log("en: %p", map->entity_list[i]);
 		ENTITY_LIST_APPEND(&win->render_list, map->entity_list[i]);
 	}
 }

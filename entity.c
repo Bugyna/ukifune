@@ -4,7 +4,9 @@
 
 void render_entity(WIN* win, ENTITY* e)
 {
-	// render_texture(win, e->tex);
+	e->pos.w = e->tex->rect.w;
+	e->pos.h = e->tex->rect.h;
+	render_texture_with_pos(win, e->tex, &e->pos);
 }
 
 
@@ -28,10 +30,11 @@ ENTITY* entity_create()
 	ENTITY* e = malloc(sizeof(ENTITY));
 	e->id = 0;
 	e->name = "0";
-	e->abs_x = 10;
-	e->abs_y = 10;
+	e->state = STATE_IDLE;
+	e->abs_x = 0;
+	e->abs_y = 0;
 
-	e->pos = (SDL_Rect){10, 10, 10, 10};
+	e->pos = (SDL_Rect){0,0,0,0};
 	e->tex = NULL;
 
 	COMPONENT_MAP_INIT(&e->components, 20);
@@ -49,6 +52,13 @@ void entity_add_animator(ENTITY* e, ANIMATOR* anim)
 	c->anim = anim;
 	c->type = C_ANIMATOR;
 	entity_add_component(e, c);
+}
+
+
+void entity_move(ENTITY* e, int x, int y)
+{
+	e->pos.x = x;
+	e->pos.y = y;
 }
 
 // ENTITY* entity_create_from_texture(TEXTURE tex)

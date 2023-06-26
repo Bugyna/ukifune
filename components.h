@@ -13,12 +13,13 @@ TTF_Font* font;
 
 enum
 {
-	C_COMPONENT,
+	C_EMPTY=0,
 	C_COLLIDER,
 	C_RIGIDBODY,
 	C_TEXTURE,
 	C_ATLAS,
 	C_ANIMATOR,
+	C_GRAVITY,
 };
 
 typedef enum
@@ -27,6 +28,9 @@ typedef enum
 	P_POINT,
 	P_CIRCLE,
 } PRIMITIVE_TYPE;
+
+
+typedef struct ENTITY ENTITY;
 
 typedef struct COMPONENT COMPONENT;
 typedef struct COLLIDER COLLIDER;
@@ -57,7 +61,8 @@ struct STRING
 
 struct COLLIDER
 {
-	SDL_Rect* rect;
+	ENTITY* e;
+	SDL_Rect r;
 };
 
 
@@ -66,11 +71,20 @@ struct RIGIDBODY
 	COLLIDER coll;
 };
 
+
+typedef struct
+{
+	ENTITY* e;
+	float force;
+
+} GRAVITY;
+
 struct TEXTURE
 {
 	SDL_Rect rect;
 	SDL_Texture* tex;
 	SDL_Surface* surf;
+	double angle;
 };
 
 
@@ -94,6 +108,8 @@ struct COMPONENT
 		TEXTURE* tex;
 		ATLAS* atlas;
 		ANIMATOR* anim;
+		GRAVITY* g;
+		COLLIDER* coll;
 	};
 };
 
@@ -119,4 +135,7 @@ typedef struct
 {
 	int a, b, c, d;
 } RECT;
+
+
+
 

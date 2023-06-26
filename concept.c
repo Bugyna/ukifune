@@ -11,7 +11,7 @@
 
 typedef struct
 {
-	ENTITY e;
+	ENTITY* e;
 	int hp, mana;
 	int dx, dy;
 
@@ -30,11 +30,13 @@ typedef struct
 
 GAME game;
 
-void update(GAME* game)
+void update()
 {
-	win_event_handle(game->win);
-	ENTITY_SET_REL(game->player.e.x, game->player.dx * DELTA_TIME);
-	ENTITY_SET_REL(game->player.e.y, game->player.dy * DELTA_TIME);
+	win_event_handle(game.win);
+	// game->player.e->abs_x += game->player.dx * DELTA_TIME;
+	// game->player.e->abs_y += game->player.dy * DELTA_TIME;
+	game.player.e->pos.x += game.player.dx * DELTA_TIME;
+	game.player.e->pos.y += game.player.dy * DELTA_TIME;
 }
 
 u8 player_move_left BIND_FN_PARAMS
@@ -69,6 +71,13 @@ u8 player_move_down BIND_FN_PARAMS
 	return 0;
 }
 
+u8 player_rotate BIND_FN_PARAMS
+{
+	// SDL_Log("roate: %f", game.player.e->tex->angle);
+	game.player.e->tex->angle += 22;
+	return 0;
+}
+
 u8 player_reset_dx BIND_FN_PARAMS
 {
 	SDL_Log("reset");
@@ -85,21 +94,23 @@ u8 player_reset_dy BIND_FN_PARAMS
 
 int main(int argc, char* argv[])
 {
-	// game_init(&game);
-
-	PLAYER player;
 	game.win = win_create();
-	world_init(&game.world);
-	TEXTURE* atlas = slice_map(game.win, "explosion1.png", 4, 4, 256, 256, 500, 500);
-	entity_init_from_texture(&game.player.e, atlas[9]);
-	// entity_init_from_texture(&game.player.e, create_texture_from_image(game.win, 200, 200, 500, 500, "maybe.png"));
-	// game.player.e = entity_create_from_texture(create_texture_from_image(&game.win, 200, 200, 50, 50, "maybe.png"));
-	// ENTITY bg = entity_create_from_texture(create_texture_from_image(game.win, 200, 200, 400, 400, "test.jpg"));
-	// map_add_entity(&game.world.maps[0], &bg);
-	map_add_entity(&game.world.maps[0], &game.player.e);
 
-	SDL_Log("pl: %p", &game.player.e);
-	win_set_render_queue(game.win, &game.world.maps[0], 0, 0, 0, 0);
+	world_init(&game.world);
+	game.player.e = entity_create();
+	TEXTURE* atlas = slice_map(game.win, "explosion1.png", 4, 4, 256, 256, 115, 115, 30, 35, 1.5);
+	ANIMATOR* a = create_anim(game.player.e, atlas, 16, 4, NULL);
+
+	entity_add_animator(game.player.e, a);
+	entity_add_component(game.player.e, create_gravity(game.player.e, 10));
+	entity_add_component(game.player.e, create_collider(game.player.e, (SDL_Rect){0,0,0,0}));
+	game.player.e->tex = &atlas[9];
+	ENTITY_LIST_APPEND(&game.win->render_list, game.player.e);
+	// game.player.e = en;
+	entity_move(game.player.e, 200, 0);
+
+	// map_add_entity(&game.world.maps[0], &game.player.e);
+	// win_set_render_queue(game.win, &game.world.maps[0], 0, 0, 0, 0);
 
 
 	win_add_child(game.win, create_label(game.win, 1000, 100, "atak"));
@@ -118,6 +129,7 @@ int main(int argc, char* argv[])
 	win_bind(game.win, "[keyhold]d", player_move_right);
 	win_bind(game.win, "[keyhold]w", player_move_up);
 	win_bind(game.win, "[keyhold]s", player_move_down);
+	win_bind(game.win, "[keyhold]r", player_rotate);
 	win_bind(game.win, "[keyup]a", player_reset_dx);
 	win_bind(game.win, "[keyup]d", player_reset_dx);
 	win_bind(game.win, "[keyup]w", player_reset_dy);
@@ -140,23 +152,12 @@ int main(int argc, char* argv[])
 		char* tmp = keycode_list_pretty(game.win->keys_held);
 		change_widget_texture_text(game.win->children[8], tmp);
 		free(tmp);
-		// while (SDL_PollEvent(&game.win.event)) {
-			// switch (game.win.event.type) {
-				// case SDL_QUIT:
-					// game.win.is_running = false;
-				// break;
-	
-				// case SDL_WINDOWEVENT:
-					// win_handle_window_event(&game.win, game.win.event);
-				// break;
-				
-				// case SDL_KEYDOWN:
-					// if (game.win.event.key.keysym.sym == 'a') player_move_left(&game.win.children[0], game.win.event, "a");
-					// else if (game.win.event.key.keysym.sym == 'd') player_move_right(&game.win.children[0], game.win.event, "d");
-				// break;
-			// }
-		// }
-		update(&game);
+
+
+		if (FRAMES_ELAPSED % a->freq == 0) {
+			animator_trigger(a);
+		}
+		update();
 		win_render_default(game.win);
 		cap_fps();
 		// cap_fps_fixed(25);

@@ -7,6 +7,9 @@
 
 #include "core.h"
 
+
+#define DEBUG_KEYS 1
+
 typedef struct PLAYER PLAYER;
 struct PLAYER
 {
@@ -197,6 +200,7 @@ u8 empty_test BIND_FN_PARAMS
 	return 1;
 }
 
+
 int main (int argc, char* argv[]) {
 	win = win_create();
 	world_init(&world);
@@ -259,8 +263,8 @@ int main (int argc, char* argv[]) {
 	widget_bind(win->children[0], "<Escape>", win_close);
 	widget_bind(win->children[3], "<mouse_right><mouse_move>", test_drag_x);
 	widget_bind(win->children[3], "<mouse_middle><mouse_move>", test_drag);
-	widget_bind(win->children[0], "<mouse_left><mouse_move>", test_drag_2);
-	widget_bind(win->children[0], "z<mouse_move>", test_drag_2);
+	widget_bind(win->children[1], "<mouse_right><mouse_move>", test_drag_2);
+	widget_bind(win->children[3], "z<mouse_move>", test_drag_2);
 	widget_bind(win->children[0], "a", spawn_circle);
 	widget_bind(win->children[0], "s", select_primitive);
 	// SDL_Log("hash mouse move: %d", hash("<mouse_move>") % win->children[3].binds.size);
@@ -274,6 +278,9 @@ int main (int argc, char* argv[]) {
 	// for (int i = 0; i < 15; i++)
 		// rescale_texture(&atlas[i], 300, 300);
 	entity_add_animator(en, a);
+	entity_add_component(en, create_gravity(en, 10));
+	entity_add_component(en, create_collider(en, (SDL_Rect){0,0,0,0}));
+	entity_move(en, 200, 0);
 
 	TEXTURE t = create_texture_from_image(win, 400, 200, 200, 200, "explosion1.png");
 	en1->tex = &t;
@@ -320,6 +327,23 @@ int main (int argc, char* argv[]) {
 		change_widget_texture_text(win->children[12], tmp);
 		free(tmp);
 
+
+		ITERATE_LIST(ENTITY, win->render_list, n)
+		{
+			ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_GRAVITY)
+			{
+				gravity_apply(val->g);
+			}
+
+
+			ITERATE_LIST(ENTITY, win->render_list, n)
+			{
+				ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_COLLIDER)
+				{
+					collider_apply(val->coll);
+				}
+			}
+		}
 		if (FRAMES_ELAPSED % a->freq == 0) {
 			animator_trigger(a);
 		}

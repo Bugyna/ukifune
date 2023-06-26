@@ -1,6 +1,22 @@
 #pragma once
 #include "components.h"
 #include "widgets.h"
+#include "entity.h"
+
+
+SDL_Rect subtract_rects(SDL_Rect a, SDL_Rect b)
+{
+	SDL_Rect r = {.x=a.x-b.y, .y=a.y-b.y, .w=a.w-b.w, .h=a.h-b.h};
+	return r;
+}
+
+void subtract_rect(SDL_Rect* a, SDL_Rect b)
+{
+	a->x -= b.x;
+	a->y -= b.y;
+	a->w -= b.w;
+	a->h -= b.h;
+}
 
 
 void change_texture_to_text(WIN* win, TEXTURE* t, const char* text, SDL_Color color)
@@ -32,6 +48,7 @@ TEXTURE create_texture_from_text(WIN* win, int x, int y, const char* text, SDL_C
 	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
 	// tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};
 	tex.rect = (SDL_Rect){x, y, tex.surf->w, tex.surf->h};
+	tex.angle = 0;
 
 	return tex;
 }
@@ -58,7 +75,7 @@ TEXTURE create_texture_from_image(WIN* win, int x, int y, int w, int h, const ch
 	tex.surf = IMG_Load(path);
 	// Uint32 colorkey = SDL_MapRGB(loadedSurface->format, 0, 0, 0);
 	// SDL_SetColorKey(loadedSurface, SDL_TRUE, colorkey);
-
+	tex.angle = 0;
 	UKI_ASSERT(tex.surf, "something went wrong when loading image from path: %s", path);
 	tex.tex = SDL_CreateTextureFromSurface(win->renderer, tex.surf);
 	// SDL_SetTextureAlphaMod(tex.tex, 0);
@@ -83,10 +100,24 @@ void update_texture(TEXTURE* tex)
 	
 }
 
+void __render_texture(WIN* win, TEXTURE* tex, SDL_Rect* pos)
+{
+	if (pos == NULL)
+		SDL_RenderCopyEx(win->renderer, tex->tex, NULL, &tex->rect, tex->angle, NULL, 0);
+	else
+		SDL_RenderCopyEx(win->renderer, tex->tex, NULL, pos, tex->angle, NULL, 0);
+}
+
+
 void render_texture(WIN* win, TEXTURE* tex)
 {
-	SDL_SetTextureBlendMode(win->renderer, SDL_BLENDMODE_NONE);
-	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, &tex->rect, 0, NULL, 0);
+	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, &tex->rect, tex->angle, NULL, 0);
+}
+
+void render_texture_with_pos(WIN* win, TEXTURE* tex, SDL_Rect* pos)
+{
+	SDL_Log("roate: %f", tex->angle);
+	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, pos, tex->angle, NULL, 0);
 }
 
 
@@ -113,6 +144,54 @@ void render_primitive_list(WIN* w, PRIMITIVE_LIST primitive_list)
 			break;
 		}
 	}
+}
+
+
+COMPONENT* create_empty_component()
+{
+	COMPONENT* c = malloc(sizeof(COMPONENT));
+	c->type = C_EMPTY;
+	return c;
+}
+
+
+COMPONENT* create_collider(ENTITY* e, SDL_Rect r)
+{
+	COMPONENT* c = malloc(sizeof(COMPONENT));
+	c->type = C_COLLIDER;
+	c->coll = malloc(sizeof(GRAVITY));
+	c->coll->e = e;
+	c->coll->r = r;
+
+	return c;
+	
+}
+
+void collider_apply(COLLIDER* coll)
+{
+	SDL_Rect r = subtract_rects(coll->e->pos, coll->r);
+	if (r.y+r.h >= 720)
+		coll->e->pos.y = 720-coll->e->pos.h;
+}
+
+
+COMPONENT* create_gravity(ENTITY* e, float force)
+{
+	COMPONENT* c = malloc(sizeof(COMPONENT));
+	c->type = C_GRAVITY;
+	c->g = malloc(sizeof(GRAVITY));
+	c->g->e = e;
+	c->g->force = force;
+
+	return c;
+	
+}
+
+
+void gravity_apply(GRAVITY* g)
+{
+	g->e->abs_y += g->force;
+	g->e->pos.y += g->force;
 }
 
 // void update_texture_from_text(SDL_Renderer* renderer, int x, int y, char* text, SDL_Color color)

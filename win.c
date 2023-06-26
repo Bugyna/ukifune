@@ -4,6 +4,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdlib.h>
 
+
+#include "DEBUG_DEFS.h"
 #include "widgets.h"
 #include "entity.c"
 
@@ -56,7 +58,7 @@ WIN* win_create()
 									 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 									 );
 	
-	// SDL_SetRenderDrawBlendMode(w->renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawBlendMode(w->renderer, SDL_BLENDMODE_BLEND);
 	
 	
 	SDL_GetWindowSize(w->win, &w->width, &w->height);
@@ -428,7 +430,12 @@ char* win_handle_mouse_move(WIN* w, EVENT e)
 	// SDL_Log("Dwawd: %d", o);
 	strcpy(tmp+o, "<mouse_move>");
 	tmp[o+13] = '\0';
+
+
+	#if DEBUG_MOUSE == 1
 	SDL_Log("dwa: %s %d", tmp, e.motion.state);
+	#endif
+
 	if (w->attention == w->focus || w->lock == w->focus)
 	{
 		execute_widget_bind(w->focus, e, tmp);
@@ -452,18 +459,28 @@ char* win_handle_mouse_button_down(WIN* w, EVENT e)
 	
 	// widget_localize_mouse_location(w->focus, &e);
 	char* tmp = malloc(20);
+	
+	#if DEBUG_MOUSE == 1
 	SDL_Log("win mouse button down e.button.button: %d %d %d", e.button.button, SDL_BUTTON_RIGHT, e.motion.x);
+	#endif
+
+
 	switch (e.button.button)
 	{
 		case SDL_BUTTON_LEFT:
-		SDL_Log("mouse left press");
+		// #if DEBUG_MOUSE == 1
+		// SDL_Log("mouse left press");
+		// #endif
+
 		tmp = "<mouse_left>";
 		break;
+		
 		case SDL_BUTTON_RIGHT:
 		tmp = "<mouse_right>";
 		break;
+		
 		case SDL_BUTTON_MIDDLE:
-		SDL_Log("mouse middle press");
+		// SDL_Log("mouse middle press");
 		tmp = "<mouse_middle>";
 		break;
 	}
@@ -499,10 +516,14 @@ char* win_handle_mouse_button_up(WIN* w, EVENT e)
 {
 	if (e.button.button == SDL_BUTTON_LEFT) {
 		w->last_click_release = e;
-		
+
+		#if DEBUG_WIDGET == 1
 		SDL_Log("focus bef: %s", w->focus->name);
+		#endif
 		set_focus_auto(w);
+		#if DEBUG_WIDGET == 1
 		SDL_Log("focus aft: %s", w->focus->name);
+		#endif
 		execute_widget_bind(w->focus, e, "<mouse_left_release>");
 	}
 	w->lock = NULL;
@@ -637,7 +658,10 @@ char* win_handle_keyup(WIN* w, EVENT e)
 		}
 	}
 
+
+	#if DEBUG_KEYS == 1
 	SDL_Log("keyup: %s", tmp);
+	#endif
 	// execute_widget_bind(w->focus, e, "<keyup>");
 	execute_widget_bind(w->focus, e, tmp);
 	return tmp;
@@ -904,10 +928,12 @@ void win_render_default(WIN* w)
 	{
 		// SDL_Log("frame: %s %d %d", n->val->name, n->val->tex->rect.w, n->val->tex->rect.h);
 		#if DEBUGGING == 1
-			SDL_RenderDrawRect(w->renderer, &n->val->tex->rect);
+			SDL_RenderDrawRect(w->renderer, &n->val->pos);
 		#endif
 
-		render_texture(w, n->val->tex);
+
+		render_entity(w, n->val);
+		// render_texture(w, n->val->tex);
 	}
 	
 	render_primitive_list(w, w->primitive_list_tmp);

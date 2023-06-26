@@ -23,9 +23,11 @@ void animator_default(ANIMATOR* anim)
 {
 	// anim->frame
 	anim->frame = &anim->frames[anim->curr];
-	anim->frame->rect.x = 400;
-	anim->frame->rect.y = 300;
+	// anim->frame->rect.x = 400;
+	// anim->frame->rect.y = 300;
+	// anim->frame->angle += 22;
 	anim->e->tex = anim->frame;
+	// anim->e->tex->angle += 0.22;
 	// SDL_Log("frame: %d %d %d %d", anim->e->tex->rect.x, anim->e->tex->rect.y, anim->e->tex->rect.w, anim->e->tex->rect.h);
 }
 
@@ -41,7 +43,7 @@ ANIMATOR* create_anim(ENTITY* e, TEXTURE* frames, int frame_count, int freq, voi
 	anim->frame = &frames[0];
 	// e->tex = anim->frame;
 	anim->freq = freq;
-	if (anim->transform != NULL)
+	if (transform != NULL)
 		anim->transform = transform;
 	else
 		anim->transform = animator_default;
@@ -67,6 +69,10 @@ void animator_bind(ANIMATOR* anim, void(*fn)(ANIMATOR*))
 	anim->transform = fn;
 }
 
+void animator_reset(ANIMATOR* anim)
+{
+	anim->curr = 0;
+}
 
 
 void animator_trigger(ANIMATOR* anim)
@@ -76,10 +82,6 @@ void animator_trigger(ANIMATOR* anim)
 	anim->transform(anim);
 }
 
-void animator_reset(ANIMATOR* anim)
-{
-	anim->curr = 0;
-}
 
 
 void resize_anim_test(ANIMATOR* anim)

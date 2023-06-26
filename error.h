@@ -17,6 +17,8 @@ TTF_Quit();\
 SDL_Quit();\
 exit(-1);\
 
+
+
 #define UKI_DEBUG(s, ...) SDL_Log(s __VA_ARGS__); SDL_Log("\n");
 #define UKI_WARNING(...) UKI_DEBUG("warning: ", __VA_ARGS__)
 

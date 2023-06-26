@@ -27,6 +27,15 @@
 #define ENTITY_SET(e_pos, n) *e_pos = n
 #define ENTITY_SET_REL(e_pos, n) *e_pos = *e_pos + n
 
+
+enum
+{
+	STATE_IDLE,
+	STATE_MOVE,
+	STATE_JUMP,
+	STATE_FALL,
+};
+
 typedef struct ENTITY ENTITY;
 
 
@@ -42,6 +51,8 @@ struct ENTITY
 {
 	u32 id;
 	char* name;
+	int state;
+
 	int abs_x, abs_y;
 
 	SDL_Rect pos;
