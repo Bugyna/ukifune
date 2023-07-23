@@ -607,10 +607,10 @@ char* win_handle_keydown(WIN* w, EVENT e)
 		bool flag = 1;
 
 
-		ITERATE_LIST(KEYCODE, w->keys_held, n)
+		ITERATE_LINKED_LIST(KEYCODE_LIST, &w->keys_held, SDL_Keycode)
 		// for (KEYCODE_NODE* n = w->keys_held.first; n != NULL || n->next != NULL; n = n->next)
 		{
-			if (*n->val == e.key.keysym.sym) {
+			if (*val == e.key.keysym.sym) {
 				flag = 0;
 				break;
 			}
@@ -649,11 +649,11 @@ char* win_handle_keyup(WIN* w, EVENT e)
 		tmp[len+1] = '\0';
 	}
 
-	ITERATE_LIST(KEYCODE, w->keys_held, n)
+	ITERATE_LINKED_LIST(KEYCODE_LIST, &w->keys_held, SDL_Keycode)
 	{
-		if (*n->val == e.key.keysym.sym) {
-			if (n->val == NULL) break;
-			KEYCODE_LIST_POP_AT_PTR(&w->keys_held, n);
+		if (*val == e.key.keysym.sym) {
+			if (val == NULL) break;
+			KEYCODE_LIST_POP_AT_PTR(&w->keys_held, NODE);
 			break;
 		}
 	}
@@ -673,16 +673,16 @@ char* win_handle_keyup(WIN* w, EVENT e)
 char* win_handle_keypress(WIN* w, EVENT e)
 {
 	char* tmp;
-	ITERATE_LIST(KEYCODE, w->keys_held, n)
+	ITERATE_LINKED_LIST(KEYCODE_LIST, &w->keys_held, SDL_Keycode)
 	{
 		tmp = malloc(30);
 		strcpy(tmp, "[keyhold]");
 		tmp[10] = '\0';
 
-		if (n->val == NULL) break;
-		if (*n->val > 31 && *n->val < 128)
+		if (val == NULL) break;
+		if (*val > 31 && *val < 128)
 		{
-			tmp[9] = *n->val;
+			tmp[9] = *val;
 		}
 
 		else {
@@ -924,16 +924,24 @@ void win_render_default(WIN* w)
 		// }
 	// }
 
-	ITERATE_LIST(ENTITY, w->render_list, n)
+	ITERATE_LINKED_LIST(ENTITY_LIST, &w->render_list, ENTITY)
 	{
+		
 		// SDL_Log("frame: %s %d %d", n->val->name, n->val->tex->rect.w, n->val->tex->rect.h);
-		#if DEBUGGING == 1
-			SDL_RenderDrawRect(w->renderer, &n->val->pos);
-		#endif
+		// #if DEBUGGING == 1
+			// SDL_RenderDrawRect(w->renderer, &n->val->pos);
+		// #endif
 
 
-		render_entity(w, n->val);
-		// render_texture(w, n->val->tex);
+		render_entity(w, val);
+		// ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_COLLIDER)
+		// {
+			// SDL_SetRenderDrawColor(w->renderer, 255, 255, 75, 255);
+			// SDL_Rect r = subtract_rects(n->val->pos, val->coll->r);
+			// SDL_RenderDrawRect(w->renderer, &r);
+			// SDL_Log("coll: %d %d %d %d", r.x, r.y, r.w, r.h);
+			// SDL_SetRenderDrawColor(w->renderer, 255, 0, 75, 255);
+		// }
 	}
 	
 	render_primitive_list(w, w->primitive_list_tmp);

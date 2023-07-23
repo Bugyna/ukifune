@@ -16,7 +16,7 @@ VAL_TYPE* val;\
 if (BUCKET != NULL) val = BUCKET->val;\
 for (; BUCKET != NULL && val != NULL && BUCKET->next->key != NULL; BUCKET = BUCKET->next, val=BUCKET->val)
 
-#define DEFINE_HASHMAP(NAME, VAL_TYPE)\
+#define DEFINE_HASHMAP(NAME, VAL_TYPE, ...)\
 typedef struct NAME NAME;\
 typedef struct NAME##_BUCKET NAME##_BUCKET;\
 struct NAME##_BUCKET\
@@ -30,6 +30,7 @@ struct NAME \
 {\
 	NAME##_BUCKET* list;\
 	int size, occupied;\
+	__VA_ARGS__\
 };\
 void NAME##_INIT(NAME* hm, int size)\
 {\
@@ -197,6 +198,8 @@ static inline void NAME##_REMOVE(NAME* hm, const char* key)\
 \
 	hm->occupied--;\
 }
+
+
 
 
 

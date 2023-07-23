@@ -143,10 +143,11 @@ u8 select_primitive BIND_FN_PARAMS
 {
 	PRIMITIVE* p;
 	bool flag = false;
-	ITERATE_LIST(PRIMITIVE, w->win_parent->primitive_list_permanent, n)
+	// ITERATE_LIST(PRIMITIVE, w->win_parent->primitive_list_permanent, n)
+	ITERATE_LINKED_LIST(PRIMITIVE_LIST, &w->win_parent->primitive_list_permanent, PRIMITIVE)
 	{
-		if (n->val == NULL) break;
-		p = n->val;
+		if (val == NULL) break;
+		p = val;
 		switch (p->type)
 		{
 			case P_RECT:
@@ -279,13 +280,14 @@ int main (int argc, char* argv[]) {
 		// rescale_texture(&atlas[i], 300, 300);
 	entity_add_animator(en, a);
 	entity_add_component(en, create_gravity(en, 10));
-	entity_add_component(en, create_collider(en, (SDL_Rect){0,0,0,0}));
+	entity_add_component(en, create_collider(en, (SDL_Rect){0,0,50, 50}));
 	entity_move(en, 200, 0);
 
 	TEXTURE t = create_texture_from_image(win, 400, 200, 200, 200, "explosion1.png");
 	en1->tex = &t;
 	en->tex = &atlas[0];
 	ENTITY_LIST_APPEND(&win->render_list, en);
+	// ENTITY_LIST_APPEND(&win->render_list, en1);
 	// ENTITY_LIST_APPEND(&win->render_list, en1);
 	// entity_add_animator(en, a);
 	// animator_init(&a, &win->children[1]->label.tex, 100, 10);
@@ -328,22 +330,32 @@ int main (int argc, char* argv[]) {
 		free(tmp);
 
 
-		ITERATE_LIST(ENTITY, win->render_list, n)
-		{
-			ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_GRAVITY)
-			{
-				gravity_apply(val->g);
-			}
+		// ITERATE_LIST(ENTITY, win->render_list, n)
+		// ITERATE_LINKED_LIST_VN(ENTITY_LIST, &win->render_list, ENTITY, n)
+		// {
+			// {ITERATE_HASHMAP_INDEX(&n->components, COMPONENT_MAP, COMPONENT, C_GRAVITY)
+			// {
+				// gravity_apply(val->g);
+				// SDL_Log("grav");
+			// }
+			// }
 
 
-			ITERATE_LIST(ENTITY, win->render_list, n)
-			{
-				ITERATE_HASHMAP_INDEX(&n->val->components, COMPONENT_MAP, COMPONENT, C_COLLIDER)
-				{
-					collider_apply(val->coll);
-				}
-			}
-		}
+			// ITERATE_LIST(ENTITY, win->render_list, n)
+			// ITERATE_LINKED_LIST(ENTITY_LIST, win->render_list, ENTITY, n)
+			// {
+			// ITERATE_HASHMAP_INDEX(&n->components, COMPONENT_MAP, COMPONENT, C_COLLIDER)
+			// {
+				// collider_apply(val->coll);
+				// SDL_SetRenderDrawColor(win->renderer, 255, 255, 75, 255);
+				// SDL_Rect r = subtract_rects(n->pos, val->coll->r);
+				// SDL_RenderDrawRect(win->renderer, &r);
+				// SDL_Log("coll: %d %d %d %d", r.x, r.y, r.w, r.h);
+				// SDL_SetRenderDrawColor(win->renderer, 255, 0, 75, 255);
+			// }
+				
+			// }
+		// }
 		if (FRAMES_ELAPSED % a->freq == 0) {
 			animator_trigger(a);
 		}

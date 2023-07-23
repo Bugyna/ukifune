@@ -6,7 +6,7 @@
 
 SDL_Rect subtract_rects(SDL_Rect a, SDL_Rect b)
 {
-	SDL_Rect r = {.x=a.x-b.y, .y=a.y-b.y, .w=a.w-b.w, .h=a.h-b.h};
+	SDL_Rect r = {.x=a.x-b.x, .y=a.y-b.y, .w=a.w-b.w, .h=a.h-b.h};
 	return r;
 }
 
@@ -116,31 +116,31 @@ void render_texture(WIN* win, TEXTURE* tex)
 
 void render_texture_with_pos(WIN* win, TEXTURE* tex, SDL_Rect* pos)
 {
-	SDL_Log("roate: %f", tex->angle);
+	// SDL_Log("roate: %f", tex->angle);
 	SDL_RenderCopyEx(win->renderer, tex->tex, NULL, pos, tex->angle, NULL, 0);
 }
 
 
 void render_primitive_list(WIN* w, PRIMITIVE_LIST primitive_list)
 {
-	ITERATE_LIST(PRIMITIVE, primitive_list, n)
+	ITERATE_LINKED_LIST(PRIMITIVE_LIST, &primitive_list, PRIMITIVE)
 	// for (PRIMITIVE_NODE* n = primitive_list.first; (n != NULL && n != n->next); n = n->next)
 	{
-		SDL_SetRenderDrawColor(w->renderer, n->val->color.r, n->val->color.g, n->val->color.b, 55);
-		switch (n->val->type)
+		SDL_SetRenderDrawColor(w->renderer, val->color.r, val->color.g, val->color.b, 55);
+		switch (val->type)
 		{
 			case P_RECT:
-				SDL_RenderDrawRect(w->renderer, &n->val->r);
-				SDL_SetRenderDrawColor(w->renderer, n->val->color.r, n->val->color.g, n->val->color.b, 22);
-				SDL_RenderFillRect(w->renderer, &n->val->r);
+				SDL_RenderDrawRect(w->renderer, &val->r);
+				SDL_SetRenderDrawColor(w->renderer, val->color.r, val->color.g, val->color.b, 22);
+				SDL_RenderFillRect(w->renderer, &val->r);
 			break;
 			case P_POINT:
-				SDL_SetRenderDrawColor(w->renderer, n->val->color.r, n->val->color.g, n->val->color.b, 22);
-				SDL_RenderDrawPoint(w->renderer, n->val->p.x, n->val->p.y);
+				SDL_SetRenderDrawColor(w->renderer, val->color.r, val->color.g, val->color.b, 22);
+				SDL_RenderDrawPoint(w->renderer, val->p.x, val->p.y);
 			break;
 			case P_CIRCLE:
-				SDL_SetRenderDrawColor(w->renderer, n->val->color.r, n->val->color.g, n->val->color.b, 255);
-				uki_draw_circle(w->renderer, n->val->c);
+				SDL_SetRenderDrawColor(w->renderer, val->color.r, val->color.g, val->color.b, 255);
+				uki_draw_circle(w->renderer, val->c);
 			break;
 		}
 	}

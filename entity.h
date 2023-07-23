@@ -38,6 +38,8 @@ enum
 
 typedef struct ENTITY ENTITY;
 
+#define ENTITY_BIND_PARAMS (ENTITY* entity, EVENT e, BIND* bind)
+
 
 typedef struct
 {
@@ -63,7 +65,7 @@ struct ENTITY
 };
 
 
-DEFINE_LINKED_LIST(ENTITY, ENTITY)
+DEFINE_LINKED_LIST(ENTITY_LIST, ENTITY)
 DEFINE_HASHMAP(ENTITY_MAP, ENTITY)
 ENTITY_MAP global_entities;
 

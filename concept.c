@@ -13,7 +13,7 @@ typedef struct
 {
 	ENTITY* e;
 	int hp, mana;
-	int dx, dy;
+	float dx, dy;
 
 } PLAYER;
 
@@ -35,13 +35,15 @@ void update()
 	win_event_handle(game.win);
 	// game->player.e->abs_x += game->player.dx * DELTA_TIME;
 	// game->player.e->abs_y += game->player.dy * DELTA_TIME;
-	game.player.e->pos.x += game.player.dx * DELTA_TIME;
-	game.player.e->pos.y += game.player.dy * DELTA_TIME;
+	game.player.e->pos.x += game.player.dx;
+	game.player.e->pos.y += game.player.dy;
 }
 
 u8 player_move_left BIND_FN_PARAMS
 {
-	if (game.player.dx == 0) game.player.dx = -2;
+	if (game.player.dx <= 0 && game.player.dx > -10) {
+		game.player.dx -= 0.7;
+	}
 	// SDL_Log("1 %d %d", game.player.e.tex.rect.x, *game.player.e.x);
 	// ENTITY_SET_POS_REL(game.player.e.x, -10);
 	// SDL_Log("2 %d %d", game.player.e.tex.rect.x, *game.player.e.x);
@@ -50,7 +52,9 @@ u8 player_move_left BIND_FN_PARAMS
 
 u8 player_move_right BIND_FN_PARAMS
 {
-	if (game.player.dx == 0) game.player.dx = 2;
+	if (game.player.dx >= 0 && game.player.dx < 10) {
+		game.player.dx += 0.7;
+	}
 	// ENTITY_SET_REL(game.player.e.x, 10);
 	return 0;
 }
@@ -99,11 +103,11 @@ int main(int argc, char* argv[])
 	world_init(&game.world);
 	game.player.e = entity_create();
 	TEXTURE* atlas = slice_map(game.win, "explosion1.png", 4, 4, 256, 256, 115, 115, 30, 35, 1.5);
-	ANIMATOR* a = create_anim(game.player.e, atlas, 16, 4, NULL);
+	// ANIMATOR* a = create_anim(game.player.e, atlas, 16, 4, NULL);
 
-	entity_add_animator(game.player.e, a);
+	// entity_add_animator(game.player.e, a);
 	entity_add_component(game.player.e, create_gravity(game.player.e, 10));
-	entity_add_component(game.player.e, create_collider(game.player.e, (SDL_Rect){0,0,0,0}));
+	entity_add_component(game.player.e, create_collider(game.player.e, (SDL_Rect){0,0,-20,-20}));
 	game.player.e->tex = &atlas[9];
 	ENTITY_LIST_APPEND(&game.win->render_list, game.player.e);
 	// game.player.e = en;
@@ -154,9 +158,9 @@ int main(int argc, char* argv[])
 		free(tmp);
 
 
-		if (FRAMES_ELAPSED % a->freq == 0) {
-			animator_trigger(a);
-		}
+		// if (FRAMES_ELAPSED % a->freq == 0) {
+			// animator_trigger(a);
+		// }
 		update();
 		win_render_default(game.win);
 		cap_fps();

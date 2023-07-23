@@ -181,7 +181,7 @@ struct WIDGET
 };
 
 
-DEFINE_LINKED_LIST(KEYCODE, SDL_Keycode)
+DEFINE_LINKED_LIST(KEYCODE_LIST, SDL_Keycode)
 char* keycode_list_to_str(KEYCODE_LIST l, char* s)
 {
 	int i = 0;
@@ -189,10 +189,11 @@ char* keycode_list_to_str(KEYCODE_LIST l, char* s)
 	// if (s == NULL)
 		// s = calloc(l.length+1, sizeof(char));
 
-	ITERATE_LIST(KEYCODE, l, n)
+	// ITERATE_LIST(KEYCODE_LIST, l, n)
+	ITERATE_LINKED_LIST_VN(KEYCODE_LIST, &l, SDL_Keycode, n)
 	{
-		if (n->val == NULL) break;
-		s[i++] = *n->val;
+		if (n == NULL) break;
+		s[i++] = *n;
 	}
 
 	s[i] = '\0';
@@ -207,10 +208,11 @@ char* keycode_list_pretty(KEYCODE_LIST l)
 	char* s = calloc(l.length*5+1, sizeof(char));
 	
 	strcpy(s, "!!NULL");
-	ITERATE_LIST(KEYCODE, l, n)
+	// ITERATE_LIST(KEYCODE_LIST, l, n)
+	ITERATE_LINKED_LIST_VN(KEYCODE_LIST, &l, SDL_Keycode, n)
 	{
-		if (n->val == NULL) break;
-		s[i++] = *n->val;
+		if (n == NULL) break;
+		s[i++] = *n;
 		s[i++] = ' ';
 		s[i++] = '-';
 		s[i++] = '>';
